@@ -1,0 +1,64 @@
+    switch(order[sindex])
+    {
+      case 0:
+        //wait for activation
+        write_state(0, argi, argf, 0, 0);
+        sindex++;
+        break;
+      case 1: //line follow to corner I{speed} F{}
+        write_state(1, argi, argf, 1, 0);
+        sindex++;
+        break;
+      case 2: //line follow distance I{speed} F{distance}
+        write_state(2, argi, argf, 1, 1);
+        sindex++;
+        break;
+      case 3: //line follow until lost line I{speed} F{}
+        write_state(3, argi, argf, 1, 0);
+        sindex++;
+        break;
+      case 4: //start rotation I{speed} f{}
+        write_state(4, argi, argf, 1, 0);
+        sindex++;
+        break;
+      case 5: //stop rotation on a line I{pin} f{}
+        write_state(5, argi, argf, 1, 0);
+        sindex++;
+        break;
+      case 6: //stop rotation at degrees I{} f{angle} angle must coorespond to direction of rotation, no training wheels
+        write_state(6, argi, argf, 0, 1);
+        sindex++;
+        break;
+      case 7: //break motors I{} F{}
+        write_state(7, argi, argf, 0, 0);
+        sindex++;
+        break;
+      case 8: //reverse sonic I{} F{distance}
+        //TODO reverse sonic code here
+        write_state(8, argi, argf, 0, 0);
+        sindex++;
+        break;
+      case 9: //I{} F{}
+        write_state(9, argi, argf, 0, 0);
+        sindex++;
+        break;
+      case 10: //I{} F{}
+        write_state(10, argi, argf, 0, 0);
+        sindex++;
+        break;
+      case 11: //I{} F{}
+        write_state(11, argi, argf, 0, 0);
+        sindex++;
+        break;
+      case 12: //I{} F{}
+        write_state(12, argi, argf, 0, 0);
+        sindex++;
+        break;
+      case 13: //drive distance I{speed} F{distance}
+        write_state(13, argi, argf, 0, 0);
+        sindex++;
+        break;
+      default:
+        write_state(-1, argi, argf, 0, 0);
+        break;
+    }
