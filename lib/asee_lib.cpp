@@ -6,27 +6,31 @@
 #include <Arduino.h>
 #include <limits.h>
 #include <Servo.h>
+#include <ZX_Sensor.h>
 
-//VARIABLES
-long high = 0;
-long low = 0;
+//Calibration VARS
+long high[8];
+long low[8];
 long lpos, hpos, llv;
-float adj; //pid adjust variable
-float motion[3] = {0,0,0}; //angle, mrtps, mltps
+long CENTEROFLINE; //center of line value given calibration high and low values
 
-int sindex = 0;
-float dd;
-int dd_flag;
+float adj; //global pid adjust variable
 
-long CENTEROFLINE;
+//Motion and position VARS
+float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/second
 
-Servo deps;
+float dd; //distance travled, used for relative distance manuvers
+int dd_flag; //when set to 1 dd is incremented with encoders
+
+Servo deps; //deposite servo variable
 elapsedMillis em;
 
+//objects to handle quadrature encoders on dual motors
 Encoder mldecode(30,29);
 Encoder mrdecode(26,27);
 
-//CLASSES
+int gs = 0; //global speed to be shared by all async methods
+int async_state = -1;
 
 //PID ################################
   void PID::set_pid(float p, float i, float d)
@@ -58,12 +62,6 @@ Encoder mrdecode(26,27);
     long w, wsum, pos;
     const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
 
-  void lf_reset()
-  {
-    pidlf.set_pid(.7, 0, 18);
-    w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
-  }
-
   void read_sv()
   {
     for(int i = 0; i < NUMLSENSORS; i++)
@@ -91,18 +89,36 @@ Encoder mrdecode(26,27);
     return (w < llv);           
   }
 
-  void lf_slice(int s, float dt)
+  void lf(int s)
   {
-    pos = read_line();
+    async_state = LINEF;
+    gs = s;
+  }
 
-    if(!lost_line())
+  void stop_sensor(int sn, int mode)
+  {
+    int snval = analogRead(svPins[sn]);
+    int osnval = snval;
+    async_reset();
+
+    while(1)
     {
-      adj = pidlf.slice(CENTEROFLINE - pos, s, dt);
-      adj = constrain(adj, -s, s);
+      if(mode == 0)
+      {
+        if(!(osnval > high) && (snval >= high)) break;
+      }
+      else if(mode == 1)
+      {
+        if(!(osnval < low) && (snval <= low)) break;
+      }
+
+      osnval = snval;
+      snval = analogRead(svPins[sn]);
+
+      async();
     }
 
-    mr_out(s + adj);
-    ml_out(s - adj);
+    break_mots();
   }
 
 //DR ################################
@@ -110,56 +126,61 @@ Encoder mrdecode(26,27);
     PID pida;
     float err;
 
-  void dr_reset()
+  void dr(float s)
   {
-    pida.set_pid(500, 0, 50);
-    dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
+    async_state = DRIVED;
+    gs = s;
   }
 
-  int dr_slice(float d, float s, float dt)
+  void stop_dd(float dist)
   {
-    if(dd*sign_f(d) < abs(d))
-    {
-      adj = pida.slice(motion[0], 30, dt);
-      mr_out(s - adj);
-      ml_out(s + adj);
+    dd = 0;
+    dd_flag = 1;
+    async_reset();
 
-      return 0;
-    }
-    else{dd_flag = 0;return 1;}
-  }
+    int dir = sign_f(dist);
 
-//ARC
-  void arc_reset()
-  {
-    motion[0] = 0;
-  }
-
-  void rotate(float deg, int speed, int mode) //0 - both motors, 1 - right motor on, 2 - left motor on
-  {
-    int dir = sign_f(deg);
-
-    while(motion[0] * dir < abs(deg))
-    {
-      mr_out(speed);
-      ml_out(dir*speed);
-    }
-
+    while(dd*dir < abs(dist)){async();}
     break_mots();
   }
 
-  void arc(float r, float s, int speed)
+//ARC
+  void rotate(int s, int mode) //0 - both motors, 1 - right motor on, 2 - left motor on
   {
-    pr = speed*(1-(WB/(2*r)));
-    pl = speed*(1+(WB/(2*r)));
+    if(mode == 0)
+    {
+      mr_out(s);
+      ml_out(-s);
+    }
+    else if(mode == 1)
+    {
+      mr_out(s);
+      ml_out(0);
+    }
+    else
+    {
+      ml_out(-s);
+      mr_out(0);
+    }
+  }
 
-    arc_reset();
-    dd = 0;
-    dd_flag = 1;
+  void arc(float r, int s)
+  {
+    mr_out( s*(1-(WB_L/(2*r))) );
+    ml_out( s*(1+(WB_L/(2*r))) );
+  }
 
-    while(dd < s)
+  void stop_deg(float a)
+  {
+    motion[0] = 0;
+    int dir = sign_f(a);
 
-    dd_flag = 0;
+    while(motion[0]*dir < abs(a))
+    {
+      async();
+    }
+
+    break_mots();
   }
 
 //XZDISTANCE
@@ -181,191 +202,24 @@ Encoder mrdecode(26,27);
     return 1000;
   }
 
-  void depr()
+  void stop_zx(int dist, int mode) //0 - stop when under 1 - stop when over
   {
-    deps.write(SERVOHOME + 15);
-    delay(800);
-    deps.write(SERVOHOME);
-  }
+    async_reset();
+    int rtdist = get_dist();
 
-  void depl()
-  {
-    deps.write(SERVOHOME - 15);
-    delay(800);
-    deps.write(SERVOHOME);
-  }
-
-  void turnr(int mode)
-  {
-
-  }
-
-  void turnl(int mode)
-  {
-
-  }
-
-  void lf_d(int speed, float d)
-  {
-
-  }
-
-  void lf_t(int speed, int mils)
-  {
-
-  }
-
-  void dr_zx(int speed, int dist)
-  {
-
-  }
-  void lf_zx(int speed, int zx)
-  {
-
-  }
-
-  void rotate_to_sensor(int speed, int pin, int mode)
-  {
-
-  }
-  void rotate_to_pos(int speed, int pos)
-  {
-
-  }
-
-  void break_mots()
-  {
-
-  }
-
-//STATE
-  //VARS
-    char order[500];
-    int I[500];
-    float F[500];
-    int osindex = -1;
-    float dt, xzdist;
-    int argi;
-    float argf;
-    int N = 0;
-    int time;
-
-  void states()
-  {
-    dt = em;
-    em = 0;
-
-    update(dt);
-
-    if(sindex >= N)
+    while(1)
     {
-      return;
-    }
-
-    if(sindex != osindex)
-    {
-      argi = I[sindex];
-      argf = F[sindex];
-
-      switch(order[sindex])
+      if(rtdist != 0)
       {
-        case LFCORNER:
-        case LFZX:
-          lf_reset();
-          break;
-        case LFD:
-          lf_reset();
-          dd = 0;motion[0] = 0;dd_flag = 1;
-          break;
-        case DRIVED:
-          dr_reset();
-          break;
-        case DRIVET:
-          time = 0;
-          dr_reset();
-          dd_flag = 0;
-          break;
+        if(mode == 0 && rtdist <= dist){break;}
+        else if(mode == 1 && rtdist >= dist){break;}
       }
-    }    
-    osindex = sindex;
 
-    switch(order[sindex])
-    {
-      case 0:
-        calibrate();
-        sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 1: //line follow to corner I{speed} F{}
-        lf_slice(argi, dt);
-        if(svals[NUMLSENSORS - 1] >= .9*high || svals[0] >= .9*high) sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 2: //line follow distance I{speed} F{distance}
-        lf_slice(argi, dt);
-        
-        if(dd > argf){ dd_flag = 0; sindex++;}
-        break;
-//////////////////////////////////////////////////////////
-      case 3: //line follow until lost line I{speed} F{}
-        lf_slice(argi, dt);
-        if(lost_line()) sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 4: //start rotation I{speed} f{}
-        motion[0] = 0; dd = 0;
-        mr_out(argi);
-        ml_out(-argi);
-        sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case STPLIN: //stop rotation on a line I{pin} f{}
-        if(analogRead(svPins[argi]) > .7*high) sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 6: //stop rotation at degrees I{} f{angle} angle must coorespond to direction of rotation, no training wheels
-        if(motion[0]*sign_f(argf) > abs(argf)) sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 7: //break motors I{} F{}
-        mr_out(0);
-        ml_out(0);
-        sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 8:
-        //TODO reverse sonic code here
-        break;
-//////////////////////////////////////////////////////////
-      case 9: //I{} F{}
-        deps.write(SERVOHOME + 45);
-        delay(1000);
-        deps.write(SERVOHOME);
-        em = 0;
-        sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 10: //I{} F{}
-        deps.write(SERVOHOME - 45);
-        delay(1000);
-        deps.write(SERVOHOME);
-        em = 0;
-        sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      case 11: //drive distance I{speed} F{distance}
-        sindex += dr_slice(argf, argi, dt);
-        break;
-//////////////////////////////////////////////////////////
-      case DRIVET: //drive for time I{speed} F{time}
-        dr_slice(1, argi, dt);
-        time += dt;
-        if(time > argf) sindex++;
-        break;
-//////////////////////////////////////////////////////////
-      default:
-        break;
+      async();
+      rtdist = get_dist();
     }
+
+    break_mots();
   }
 
 //UPDATE
@@ -387,7 +241,7 @@ Encoder mrdecode(26,27);
 
     if(rtickL != ltickL)
     {
-      update_curve();
+      motion[0] += eval_angle();
     }
   }
 
@@ -405,7 +259,7 @@ Encoder mrdecode(26,27);
       da = -(ltickL * MPT)/(r+WB_L/2);
     }
 
-    motion[0] += da;
+    return da;
   }
 
 //INIT
@@ -423,7 +277,72 @@ Encoder mrdecode(26,27);
     dd_flag = 1;
     Serial.begin(9600);
 
-    //zxs.init();
+    zxs.init();
+  }
+
+//ASYNC
+  float dt;
+
+  void async_reset()
+  {
+    switch(async_state)
+    {
+      case LINEF:
+        pidlf.set_pid(.7, 0, 18);
+        w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
+        break;
+      case DRIVED:
+        pida.set_pid(500, 0, 50);
+        dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
+        break;
+    }
+    em = 0;
+  }
+
+  void async()
+  {
+    dt = em;
+
+    update(dt);
+
+    switch(async_state)
+    {
+      case LINEF:
+        pos = read_line();
+
+        if(!lost_line())
+        {
+          adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);
+          adj = constrain(adj, -gs, gs);
+        }
+
+        mr_out(gs + adj);
+        ml_out(gs - adj);
+        break;
+      /////////////////////////////////////////////////////////////////////
+      case DRIVED:
+        adj = pida.slice(motion[0], 30, dt);
+        mr_out(gs - adj);
+        ml_out(gs + adj);
+        break;
+    }
+  }
+
+  void break_mots()
+  {
+    async_state = -1;
+    async_reset();
+
+    mr_out(0);
+    ml_out(0);
+
+    float t = 0;
+
+    while(t <= 20)
+    {
+      t += em;
+      async();
+    }
   }
 
 //TOOLBOX
@@ -463,44 +382,59 @@ Encoder mrdecode(26,27);
     analogWrite(PWML, abs(pwr));
   }
 
+  void depr()
+  {
+    deps.write(SERVOHOME + 15);
+    delay(800);
+    deps.write(SERVOHOME);
+  }
+
+  void depl()
+  {
+    deps.write(SERVOHOME - 15);
+    delay(800);
+    deps.write(SERVOHOME);
+  }
+
   void calibrate()
   {
-    long holder[8];
-    long mid_range, lc, hc;
-    hc = 0;lc = 0;
+    async_state = DRIVED;
+    async_reset();
+    
+    int tval;
 
-    for(int i = 0; i < NUMLSENSORS; i++)
+    while(dd < 4)
     {
-      holder[i] = (analogRead(svPins[i]) + analogRead(svPins[i]) + analogRead(svPins[i]))/3;
-      //holder[i] = analogRead(svPins[i]);
-      if(holder[i] < low){low = holder[i];}
-      else if(holder[i] > high){high = holder[i];}
+      for(int i = 0; i < NUMLSENSORS; i++)
+      {
+        tval = analogRead(svPins[i]);
+
+        if(tval < low[i]) {low[i] = tval;}
+        else if(tval > high[i]) {high[i] = tval;}
+      }
     }
 
-    mid_range = low + (high - low)/2;
+    break_mots();
 
-    low = 0;high = 0;
+    long w_l, wsum_l;
 
     for(int i = 0; i < NUMLSENSORS; i++)
     {
-      if(holder[i] < mid_range)
+      if(i < 3 && i > 4)
       {
-        low += holder[i];
-        lc++;
+        w_l += low[i];
+        wsum_l += low[i]*i*POSSCALE;
       }
       else
       {
-        high += holder[i];
-        hc++;
+        w_l += high[i];
+        wsum_l += high[i]*i*POSSCALE;
       }
+
+      llv += low[i];
     }
 
-    low/=lc;
-    high/=hc;
-
-    CENTEROFLINE = (high*(7*POSSCALE) + low*(21*POSSCALE))/(high * 2 + low * 6);
-
-    llv = low*NUMLSENSORS*1.05;
+    CENTEROFLINE = wsum_l/w_l;
   }
 
   int sign_f(float val)

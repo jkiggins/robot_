@@ -26,22 +26,9 @@
   #define POSSCALE 100
   #define MINPOWER 70
 
-  //STATES
-  #define LFCORNER 1
-  #define LFD 2
-  #define LFLL 3
-  #define SROT 4
-  #define STPLIN 5
-  #define STPANGL 6
-  #define BREAK 7
-  #define RVSONIC 8
-  #define DEPL 9
-  #define DEPR 10
-  #define DRIVED 11
-  #define DRIVET 12 
-  #define DRVZX 13
-  #define LFZX 14
-  #define LFCT 15
+  //Async flags
+  #define LINEF 0
+  #define DRIVED 1
 
   void calibrate();
   
@@ -66,19 +53,27 @@
     void read_sv();
     int read_line();
     int lost_line();
-    void lf_slice(int s, float dt);
+
+    void lf(int s);
+
+    void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
 
   //DR
     void dr_reset();
-    int dr_slice(float d, float s, float dt);
+    int dr(int s);
+
+    void stop_dist();
 
   //ARC
     void arc_reset();
-    void rotate(float deg, int speed, int mode); //0 - both motors, 1 - right motor on, 2 - left motor on
-    void arc(float r, float s, int speed);
+    void rotate(int speed, int mode); //0 - both motors, 1 - right motor on, 2 - left motor on
+    void arc(float r, int speed);
+
+    void stop_deg(float a);
 
   //ZX
     int get_dist();
+    void stop_zx(int dist);
   
   //INIT
     void init_a();
@@ -86,6 +81,10 @@
   //UPDATE
     void update(float dt);
     float eval_angle();
+
+  //ASYNC
+    void async_reset();
+    void async();
 
   //CONTROL
     void depr();
@@ -96,12 +95,6 @@
 
     void lf_d(int speed, float d);
     void lf_t(int speed, int mils);
-
-    void dr_zx(int speed, int dist);
-    void lf_zx(int speed, int zx);
-
-    void rotate_to_sensor(int speed, int pin, int mode);
-    void rotate_to_pos(int speed, int pos);
 
     void break_mots();
 
