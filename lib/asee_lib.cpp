@@ -9,9 +9,10 @@
 #include <ZX_Sensor.h>
 
 //Calibration VARS
-long high[8];
+float sv_scale[8];
 long low[8];
-long lpos, hpos, llv;
+long high[8];
+
 long CENTEROFLINE; //center of line value given calibration high and low values
 
 float adj; //global pid adjust variable
@@ -66,7 +67,7 @@ int async_state = -1;
   {
     for(int i = 0; i < NUMLSENSORS; i++)
     {
-      svals[i] = analogRead(svPins[i]);
+      svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
     }
   }
 
@@ -86,7 +87,7 @@ int async_state = -1;
 
   int lost_line()
   {
-    return (w < llv);           
+    return (w <= 5);           
   }
 
   void lf(int s)
@@ -105,11 +106,11 @@ int async_state = -1;
     {
       if(mode == 0)
       {
-        if(!(osnval > high) && (snval >= high)) break;
+        if((osnval < HSCALE*high[sn]) && (snval >= HSCALE*high[sn])) break;
       }
       else if(mode == 1)
       {
-        if(!(osnval < low) && (snval <= low)) break;
+        if((osnval > low[sn]) && (snval <= low[sn])) break;
       }
 
       osnval = snval;
@@ -117,8 +118,6 @@ int async_state = -1;
 
       async();
     }
-
-    break_mots();
   }
 
 //DR ################################
@@ -141,12 +140,12 @@ int async_state = -1;
     int dir = sign_f(dist);
 
     while(dd*dir < abs(dist)){async();}
-    break_mots();
   }
 
 //ARC
   void rotate(int s, int mode) //0 - both motors, 1 - right motor on, 2 - left motor on
   {
+    async_state = -1;
     if(mode == 0)
     {
       mr_out(s);
@@ -166,6 +165,7 @@ int async_state = -1;
 
   void arc(float r, int s)
   {
+    async_state = -1;
     mr_out( s*(1-(WB_L/(2*r))) );
     ml_out( s*(1+(WB_L/(2*r))) );
   }
@@ -179,8 +179,6 @@ int async_state = -1;
     {
       async();
     }
-
-    break_mots();
   }
 
 //XZDISTANCE
@@ -218,8 +216,6 @@ int async_state = -1;
       async();
       rtdist = get_dist();
     }
-
-    break_mots();
   }
 
 //UPDATE
@@ -277,7 +273,7 @@ int async_state = -1;
     dd_flag = 1;
     Serial.begin(9600);
 
-    zxs.init();
+    //zxs.init();
   }
 
 //ASYNC
@@ -302,6 +298,7 @@ int async_state = -1;
   void async()
   {
     dt = em;
+    em = 0;
 
     update(dt);
 
@@ -330,19 +327,8 @@ int async_state = -1;
 
   void break_mots()
   {
-    async_state = -1;
-    async_reset();
-
     mr_out(0);
     ml_out(0);
-
-    float t = 0;
-
-    while(t <= 20)
-    {
-      t += em;
-      async();
-    }
   }
 
 //TOOLBOX
@@ -353,6 +339,11 @@ int async_state = -1;
     if(pwr > 0)
     {
       digitalWrite(MDR0, LOW);
+      digitalWrite(MDR1, HIGH);
+    }
+    else if(pwr == 0)
+    {
+      digitalWrite(MDR0, HIGH);
       digitalWrite(MDR1, HIGH);
     }
     else
@@ -371,6 +362,11 @@ int async_state = -1;
     if(pwr > 0)
     {
       digitalWrite(MDL0, LOW);
+      digitalWrite(MDL1, HIGH);
+    }
+    else if(pwr == 0)
+    {
+      digitalWrite(MDL0, HIGH);
       digitalWrite(MDL1, HIGH);
     }
     else
@@ -396,14 +392,15 @@ int async_state = -1;
     deps.write(SERVOHOME);
   }
 
-  void calibrate()
+  void calibrate(int s)
   {
+    gs = s;
     async_state = DRIVED;
     async_reset();
     
     int tval;
 
-    while(dd < 4)
+    while(dd < 1)
     {
       for(int i = 0; i < NUMLSENSORS; i++)
       {
@@ -412,11 +409,13 @@ int async_state = -1;
         if(tval < low[i]) {low[i] = tval;}
         else if(tval > high[i]) {high[i] = tval;}
       }
+      async();
     }
 
     break_mots();
 
-    long w_l, wsum_l;
+    long w_l = 0;
+    long wsum_l = 0;
 
     for(int i = 0; i < NUMLSENSORS; i++)
     {
@@ -431,10 +430,12 @@ int async_state = -1;
         wsum_l += high[i]*i*POSSCALE;
       }
 
-      llv += low[i];
+      sv_scale[i] = POSSCALE/(high[i] - low[i]);
     }
 
     CENTEROFLINE = wsum_l/w_l;
+
+    Serial.println(CENTEROFLINE);
   }
 
   int sign_f(float val)

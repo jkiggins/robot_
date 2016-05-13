@@ -23,14 +23,15 @@
   #define SERVOPIN 23
   #define SERVOHOME 90
   #define NUMLSENSORS 8
-  #define POSSCALE 100
+  #define POSSCALE 100.0
   #define MINPOWER 70
+  #define HSCALE .82
 
   //Async flags
   #define LINEF 0
   #define DRIVED 1
 
-  void calibrate();
+  void calibrate(int s);
   
   //GENERAL PID
   	class PID
@@ -62,7 +63,7 @@
     void dr_reset();
     int dr(int s);
 
-    void stop_dist();
+    void stop_dd(float dist);
 
   //ARC
     void arc_reset();

@@ -12,6 +12,18 @@
 void setup()
 {
   init_a();
+  calibrate(100);
+  lf(200);
+  stop_sensor(7, 0);
+  break_mots();
+  delay(1000);
+  rotate(-120, 1);
+  stop_sensor(3, 0);
+  break_mots();
+
+  lf(200);
+  stop_dd(7);
+  stop_sensor(7, 0);
 }
 void loop()
 {
