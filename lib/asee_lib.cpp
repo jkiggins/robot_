@@ -13,8 +13,6 @@ float sv_scale[8];
 long low[8];
 long high[8];
 
-long CENTEROFLINE; //center of line value given calibration high and low values
-
 float adj; //global pid adjust variable
 
 //Motion and position VARS
@@ -85,9 +83,9 @@ int async_state = -1;
     return (wsum/w);
   }
 
-  int lost_line()
+  int lost_line(int w_l)
   {
-    return (w <= 5);           
+    return (w_l <= 5);           
   }
 
   void lf(int s)
@@ -305,16 +303,25 @@ int async_state = -1;
     switch(async_state)
     {
       case LINEF:
-        pos = read_line();
 
-        if(!lost_line())
+        if(!lost_line(w))
         {
+          pos = read_line();
           adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);
           adj = constrain(adj, -gs, gs);
+          
+          mr_out(gs + adj);
+          ml_out(gs - adj);
+        }
+        else
+        {
+          read_line();
+
+          mr_out(255 * (pos < CENTEROFLINE));
+          ml_out(255 * (pos >= CENTEROFLINE));
+
         }
 
-        mr_out(gs + adj);
-        ml_out(gs - adj);
         break;
       /////////////////////////////////////////////////////////////////////
       case DRIVED:
@@ -419,23 +426,8 @@ int async_state = -1;
 
     for(int i = 0; i < NUMLSENSORS; i++)
     {
-      if(i < 3 && i > 4)
-      {
-        w_l += low[i];
-        wsum_l += low[i]*i*POSSCALE;
-      }
-      else
-      {
-        w_l += high[i];
-        wsum_l += high[i]*i*POSSCALE;
-      }
-
       sv_scale[i] = POSSCALE/(high[i] - low[i]);
     }
-
-    CENTEROFLINE = wsum_l/w_l;
-
-    Serial.println(CENTEROFLINE);
   }
 
   int sign_f(float val)

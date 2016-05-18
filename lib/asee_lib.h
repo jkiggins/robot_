@@ -26,6 +26,7 @@
   #define POSSCALE 100.0
   #define MINPOWER 70
   #define HSCALE .82
+  #define CENTEROFLINE 350
 
   //Async flags
   #define LINEF 0
@@ -53,7 +54,7 @@
     void lf_reset();
     void read_sv();
     int read_line();
-    int lost_line();
+    int lost_line(int w_l);
 
     void lf(int s);
 
