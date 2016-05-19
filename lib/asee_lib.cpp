@@ -58,7 +58,7 @@ int async_state = -1;
   //VARS
     PID pidlf;
     long svals[8];
-    long w, wsum, pos;
+    long w, wsum, pos, llf, last_line;
     const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
 
   void read_sv()
@@ -73,19 +73,19 @@ int async_state = -1;
   {
     read_sv();
     w = 0;wsum = 0;
+    llf = 0;
 
     for(long i = 0; i < NUMLSENSORS; i++)
     {
+      llf += (svals[i] <= 10);
       w += svals[i];
       wsum += svals[i]*i*POSSCALE;
     }
 
-    return (wsum/w);
-  }
+    if(svals[0] > 50 && svals[NUMLSENSORS - 1] < 50){last_line = -1;}
+    else if(svals[0] < 50 && svals[NUMLSENSORS - 1] > 50){last_line = 1;}
 
-  int lost_line(int w_l)
-  {
-    return (w_l <= 5);           
+    return (wsum/w);
   }
 
   void lf(int s)
@@ -282,7 +282,7 @@ int async_state = -1;
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.7, 0, 18);
+        pidlf.set_pid(.72, 0, 60);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
       case DRIVED:
@@ -304,23 +304,21 @@ int async_state = -1;
     {
       case LINEF:
 
-        if(!lost_line(w))
+        if(llf != 8)
         {
           pos = read_line();
-          adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);
-          adj = constrain(adj, -gs, gs);
-          
-          mr_out(gs + adj);
-          ml_out(gs - adj);
         }
         else
         {
+          if(last_line == 1){pos = 450;}
+          else{pos = 250;}
           read_line();
-
-          mr_out(255 * (pos < CENTEROFLINE));
-          ml_out(255 * (pos >= CENTEROFLINE));
-
         }
+
+        adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);   
+
+        mr_out(gs + adj);
+        ml_out(gs - adj);
 
         break;
       /////////////////////////////////////////////////////////////////////
@@ -399,7 +397,7 @@ int async_state = -1;
     deps.write(SERVOHOME);
   }
 
-  void calibrate(int s)
+  void calibrate(int s, float d)
   {
     gs = s;
     async_state = DRIVED;
@@ -407,7 +405,7 @@ int async_state = -1;
     
     int tval;
 
-    while(dd < 1)
+    while(dd < d)
     {
       for(int i = 0; i < NUMLSENSORS; i++)
       {
@@ -421,13 +419,16 @@ int async_state = -1;
 
     break_mots();
 
-    long w_l = 0;
-    long wsum_l = 0;
-
     for(int i = 0; i < NUMLSENSORS; i++)
     {
       sv_scale[i] = POSSCALE/(high[i] - low[i]);
     }
+  }
+
+  void go()
+  {
+    async_reset();
+    while(1){async();}
   }
 
   int sign_f(float val)

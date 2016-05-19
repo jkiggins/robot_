@@ -12,8 +12,9 @@
 void setup()
 {
   init_a();
-  calibrate(80);
-  lf(200);
+  calibrate(80, 1);
+  lf(120);
+  go();
   /*
   stop_sensor(7, 0);
   break_mots();

@@ -32,7 +32,7 @@
   #define LINEF 0
   #define DRIVED 1
 
-  void calibrate(int s);
+  void calibrate(int s, float d);
   
   //GENERAL PID
   	class PID
@@ -54,7 +54,6 @@
     void lf_reset();
     void read_sv();
     int read_line();
-    int lost_line(int w_l);
 
     void lf(int s);
 
@@ -99,6 +98,8 @@
     void lf_t(int speed, int mils);
 
     void break_mots();
+
+    void go();
 
 
   //toolbox
