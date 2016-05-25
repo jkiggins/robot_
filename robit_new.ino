@@ -30,9 +30,18 @@ void setup()
   stop_time(TIME2SETTLE);
   lf(BASE_SPEED);
   stop_corner();
-  dr(-50);
+  // James Wall
+  dr(200);
+  stop_time(600);
+
+  dr(-100);
+  stop_time(150);
+
+  dr(-110);
   stop_time(200);
   set_last_line(1);
+  
+  //set_last_line(1);
   
   line();
 //////////////////////
@@ -65,6 +74,9 @@ void setup()
   line();
 
   stop_corner();
+
+  dr(BASE_SPEED);
+  stop_time(250);
 
   break_mots();
 }
@@ -114,6 +126,8 @@ void line()
 
 void odd_corner()
 {
+  dr(-200);
+  stop_time(10);
   rotate(-160, 0);
   stop_lost_line();
   set_last_line(1);

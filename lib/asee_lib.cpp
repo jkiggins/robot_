@@ -450,14 +450,14 @@ int async_state = -1;
   void depr()
   {
     deps.write(SERVOHOME - 45);
-    delay(200);
+    delay(250);
     deps.write(SERVOHOME);
   }
 
   void depl()
   {
     deps.write(SERVOHOME + 45);
-    delay(200);
+    delay(250);
     deps.write(SERVOHOME);
   }
 
