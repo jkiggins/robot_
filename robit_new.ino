@@ -4,30 +4,121 @@
 #define TIME2BOX 500
 #define TIMEBACKBOX 150
 #define DIST2BOX 1.5
-#define DIST2SETTLE .5
-#define BASE_SPEED 120
+#define TIME2SETTLE 800
+#define BASE_SPEED 255
 #define SPRINT 175
 #define PRECISION_SPEED 75
 
 void setup()
 {
   init_a();
-  calibrate(80, 1);
-  lf(120);
-  go();
-  /*
-  stop_sensor(7, 0);
-  break_mots();
-  delay(1000);
-  rotate(-120, 1);
-  stop_sensor(3, 0);
-  break_mots();
+  calibrate(110, 1);
+  
+  lf(BASE_SPEED);
+  corner_l(); //BOTTOM LEFT
+  mid_line(); 
+  corner_l(); //TOP LEFT
+//ODD CORNER
+  lf_settle(BASE_SPEED);
+  stop_time(TIME2SETTLE);
+  lf(BASE_SPEED);
+  corner_l(); //LEFT TOP CENTER
+///////////////////////
 
-  lf(200);
-  stop_dd(7);
-  stop_sensor(7, 0);
-  */
+//MIDDLE TURN
+  lf_settle(BASE_SPEED);
+  stop_time(TIME2SETTLE);
+  lf(BASE_SPEED);
+  stop_corner();
+  dr(-50);
+  stop_time(200);
+  set_last_line(1);
+  
+  line();
+//////////////////////
+
+
+  corner_r(); //TOP LEFT MIDDLE
+  mid_line();
+  corner_r(); //BOTTOM LEFT MIDDLE
+
+  line();
+  corner_r(); //BOTTOM RIGHT MIDDLE
+  
+  mid_line();
+  corner_r(); //TOP RIGHT MIDDLE
+
+  line();
+  stop_corner();
+
+  odd_corner();
+  line();
+  
+  corner_l(); //TOP RIGHT CENTER
+
+  line();
+  corner_l(); //TOP RIGHT
+
+  mid_line();
+
+  corner_l(); //BOTTOM RIGHT
+  line();
+
+  stop_corner();
+
+  break_mots();
 }
+
+
+void corner_l()
+{
+  stop_corner();
+  break_mots();
+  dr(110);
+  stop_time(275);
+  break_mots();
+  depl();
+  dr(-110);
+  stop_time(200);
+  set_last_line(1);
+}
+
+void corner_r()
+{
+  stop_corner();
+  break_mots();
+  dr(110);
+  stop_time(275);
+  break_mots();
+  depr();
+  dr(-110);
+  stop_time(200);
+  set_last_line(-1);
+}
+
+void mid_line()
+{
+  lf_settle(BASE_SPEED);
+  stop_time(TIME2SETTLE);
+  lf(BASE_SPEED);
+  stop_corner();
+  stop_time(TIME2SETTLE);
+}
+
+void line()
+{
+  lf_settle(BASE_SPEED);
+  stop_time(TIME2SETTLE);
+  lf(BASE_SPEED);
+}
+
+void odd_corner()
+{
+  rotate(-160, 0);
+  stop_lost_line();
+  set_last_line(1);
+}
+
 void loop()
 {
 }

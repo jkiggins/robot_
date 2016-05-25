@@ -31,6 +31,7 @@
   //Async flags
   #define LINEF 0
   #define DRIVED 1
+  #define LFSET 2
 
   void calibrate(int s, float d);
   
@@ -57,11 +58,15 @@
 
     void lf(int s);
 
+    void lf_settle(int s);
+
+    void set_last_line(int ll);
+
     void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
 
   //DR
     void dr_reset();
-    int dr(int s);
+    void dr(int s);
 
     void stop_dd(float dist);
 
@@ -87,6 +92,8 @@
     void async_reset();
     void async();
 
+    void no_state();
+
   //CONTROL
     void depr();
     void depl();
@@ -97,7 +104,12 @@
     void lf_d(int speed, float d);
     void lf_t(int speed, int mils);
 
+    void stop_corner();
+    void stop_time(int mils);
+
     void break_mots();
+
+    void stop_lost_line();
 
     void go();
 

@@ -58,14 +58,22 @@ int async_state = -1;
   //VARS
     PID pidlf;
     long svals[8];
+    char sv_char;
     long w, wsum, pos, llf, last_line;
     const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
 
   void read_sv()
   {
+    llf = 0;
+    sv_char = 0xFF;
+
     for(int i = 0; i < NUMLSENSORS; i++)
     {
       svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
+
+      sv_char &= (1 << i);
+
+      llf += (svals[i] <= 10);
     }
   }
 
@@ -73,11 +81,9 @@ int async_state = -1;
   {
     read_sv();
     w = 0;wsum = 0;
-    llf = 0;
 
     for(long i = 0; i < NUMLSENSORS; i++)
     {
-      llf += (svals[i] <= 10);
       w += svals[i];
       wsum += svals[i]*i*POSSCALE;
     }
@@ -92,6 +98,17 @@ int async_state = -1;
   {
     async_state = LINEF;
     gs = s;
+  }
+
+  void lf_settle(int s)
+  {
+    async_state = LFSET;
+    gs = s;
+  }
+
+  void set_last_line(int ll)
+  {
+    last_line = ll;
   }
 
   void stop_sensor(int sn, int mode)
@@ -123,7 +140,7 @@ int async_state = -1;
     PID pida;
     float err;
 
-  void dr(float s)
+  void dr(int s)
   {
     async_state = DRIVED;
     gs = s;
@@ -179,6 +196,17 @@ int async_state = -1;
     }
   }
 
+  void stop_lost_line()
+  {
+    async_reset();   
+
+    while(llf != 8)
+    {
+      read_sv();
+      async();
+    }
+  }
+
 //XZDISTANCE
   const int ZX_ADDR = 0x10;  // ZX Sensor I2C address
   ZX_Sensor zxs = ZX_Sensor(ZX_ADDR);
@@ -213,6 +241,29 @@ int async_state = -1;
 
       async();
       rtdist = get_dist();
+    }
+  }
+
+  void stop_corner()
+  {
+    async_reset();
+    read_sv();
+
+    while(svals[0] < 50 && svals[NUMLSENSORS - 1] < 50)
+    {
+      async();
+    }
+  }
+
+  void stop_time(int mils)
+  {
+    async_reset();
+    int dt = 0;
+
+    while(dt < mils)
+    {
+      dt += em;
+      async();
     }
   }
 
@@ -264,14 +315,20 @@ int async_state = -1;
     pinMode(PWML, OUTPUT);
     pinMode(13, OUTPUT);
 
-    digitalWrite(13, HIGH);
-
     deps.attach(SERVOPIN);
     deps.write(SERVOHOME);
     dd_flag = 1;
     Serial.begin(9600);
 
+    last_line = 1;
+
     //zxs.init();
+  }
+
+//CONTROL
+  void stop_eval_line(unsigned char compare, unsigned char mask)
+  {
+
   }
 
 //ASYNC
@@ -282,9 +339,12 @@ int async_state = -1;
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.72, 0, 60);
+        pidlf.set_pid(.9, 0, 32);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
+      case LFSET:
+        pidlf.set_pid(.5,0,200);
+        async_state = LINEF;
       case DRIVED:
         pida.set_pid(500, 0, 50);
         dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
@@ -299,26 +359,25 @@ int async_state = -1;
     em = 0;
 
     update(dt);
+    digitalWrite(13, LOW);
 
     switch(async_state)
     {
       case LINEF:
 
+        pos = read_line();
         if(llf != 8)
         {
-          pos = read_line();
+          adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);
+          mr_out(gs + adj);
+          ml_out(gs - adj);
         }
         else
         {
-          if(last_line == 1){pos = 450;}
-          else{pos = 250;}
-          read_line();
+          digitalWrite(13, HIGH);
+          mr_out(-last_line*160);
+          ml_out(last_line*160);
         }
-
-        adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);   
-
-        mr_out(gs + adj);
-        ml_out(gs - adj);
 
         break;
       /////////////////////////////////////////////////////////////////////
@@ -328,6 +387,11 @@ int async_state = -1;
         ml_out(gs + adj);
         break;
     }
+  }
+
+  void no_state()
+  {
+    async_state = -1;
   }
 
   void break_mots()
@@ -385,15 +449,15 @@ int async_state = -1;
 
   void depr()
   {
-    deps.write(SERVOHOME + 15);
-    delay(800);
+    deps.write(SERVOHOME - 45);
+    delay(200);
     deps.write(SERVOHOME);
   }
 
   void depl()
   {
-    deps.write(SERVOHOME - 15);
-    delay(800);
+    deps.write(SERVOHOME + 45);
+    delay(200);
     deps.write(SERVOHOME);
   }
 
