@@ -16,18 +16,19 @@ void setup()
   
   lf(BASE_SPEED);
   corner_l(); //BOTTOM LEFT
-  mid_line(); 
+  mid_line(0);
+/*
   corner_l(); //TOP LEFT
 //ODD CORNER
   lf_settle(BASE_SPEED);
-  stop_time(TIME2SETTLE);
+  stop_lf_settle(.1);
   lf(BASE_SPEED);
   corner_l(); //LEFT TOP CENTER
 ///////////////////////
 
 //MIDDLE TURN
   lf_settle(BASE_SPEED);
-  stop_time(TIME2SETTLE);
+  stop_lf_settle(.1);
   lf(BASE_SPEED);
   stop_corner();
   dr(-50);
@@ -39,13 +40,13 @@ void setup()
 
 
   corner_r(); //TOP LEFT MIDDLE
-  mid_line();
+  mid_line(0);
   corner_r(); //BOTTOM LEFT MIDDLE
 
   line();
   corner_r(); //BOTTOM RIGHT MIDDLE
   
-  mid_line();
+  mid_line(1);
   corner_r(); //TOP RIGHT MIDDLE
 
   line();
@@ -59,12 +60,13 @@ void setup()
   line();
   corner_l(); //TOP RIGHT
 
-  mid_line();
+  mid_line(0);
 
   corner_l(); //BOTTOM RIGHT
   line();
 
   stop_corner();
+  */
 
   break_mots();
 }
@@ -96,19 +98,22 @@ void corner_r()
   set_last_line(-1);
 }
 
-void mid_line()
+void mid_line(int t)
 {
-  lf_settle(BASE_SPEED);
-  stop_time(TIME2SETTLE);
+  lf_settle(BASE_SPEED);  
+  stop_lf_settle(3);
   lf(BASE_SPEED);
-  stop_corner();
-  stop_time(TIME2SETTLE);
+  
+  if(t == 0) stop_corner();
+  else stop_corner();
+  
+  stop_density(3, 2);
 }
 
 void line()
 {
   lf_settle(BASE_SPEED);
-  stop_time(TIME2SETTLE);
+  stop_lf_settle(10);
   lf(BASE_SPEED);
 }
 

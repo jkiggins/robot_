@@ -21,6 +21,8 @@ float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/s
 float dd; //distance travled, used for relative distance manuvers
 int dd_flag; //when set to 1 dd is incremented with encoders
 
+int sv_density;
+
 Servo deps; //deposite servo variable
 elapsedMillis em;
 
@@ -47,11 +49,17 @@ int async_state = -1;
       pidd[2] += ((pidd[0] + pidd[1])/2)*dtl;
 
       pidd[2] = constrain(pidd[2], -s/w[1], s/w[1]);
+      d_err = (pidd[0] - pidd[1])/dtl;
 
-      pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + (pidd[0] - pidd[1])/dtl * w[2];
+      pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + d_err * w[2];
     }
 
     return pidd[3];
+  }
+
+  float * PID::get_pidd()
+  {
+    return pidd;
   }
 
 //LF ################################
@@ -59,22 +67,25 @@ int async_state = -1;
     PID pidlf;
     long svals[8];
     char sv_char;
-    long w, wsum, pos, llf, last_line;
+    long w, wsum, pos, last_line;
     const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
 
   void read_sv()
   {
-    llf = 0;
-    sv_char = 0xFF;
+    sv_density = 0;
+    sv_char = 0;
 
     for(int i = 0; i < NUMLSENSORS; i++)
     {
-      svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
+      svals[i] = (analogRead(svPins[NUMLSENSORS - i - 1]) - low[i])*sv_scale[NUMLSENSORS - i - 1];
 
-      sv_char &= (1 << i);
+      sv_char |= ((svals[i] > 50) << i);
 
-      llf += (svals[i] <= 10);
+      sv_density += (svals[i] <= 10);
     }
+
+    if(svals[0] > 50 && svals[NUMLSENSORS - 1] < 50){last_line = 1;}
+    else if(svals[0] < 50 && svals[NUMLSENSORS - 1] > 50){last_line = -1;}
   }
 
   int read_line()
@@ -87,9 +98,6 @@ int async_state = -1;
       w += svals[i];
       wsum += svals[i]*i*POSSCALE;
     }
-
-    if(svals[0] > 50 && svals[NUMLSENSORS - 1] < 50){last_line = -1;}
-    else if(svals[0] < 50 && svals[NUMLSENSORS - 1] > 50){last_line = 1;}
 
     return (wsum/w);
   }
@@ -104,6 +112,16 @@ int async_state = -1;
   {
     async_state = LFSET;
     gs = s;
+  }
+
+  void stop_lf_settle(float max_err)
+  {
+    async_reset();
+
+    float * pidd = pidlf.get_pidd();
+    async();
+
+    while( (sv_density == 8) || (abs(pidd[0]) > max_err) || (abs(pidd[0] - pidd[1]) > max_err)){async();pidd = pidlf.get_pidd();}
   }
 
   void set_last_line(int ll)
@@ -200,7 +218,7 @@ int async_state = -1;
   {
     async_reset();   
 
-    while(llf != 8)
+    while(sv_density != 8)
     {
       read_sv();
       async();
@@ -249,10 +267,31 @@ int async_state = -1;
     async_reset();
     read_sv();
 
-    while(svals[0] < 50 && svals[NUMLSENSORS - 1] < 50)
+    char svchl = sv_char;
+
+    svchl &= 0xC3;
+
+    while(svchl != 0xC0 && svchl != 0x03)
     {
       async();
     }
+  }
+
+  void stop_density(int d, int mode) // 0 - equal, 1 - stop >=, 2 - stop <=
+  {
+    async_reset();
+    int logic = 1;
+
+    while(logic)
+    {
+      if(mode == 0){logic = (sv_density != d);}
+      else if(mode == 1){logic = (sv_density < d);}
+      else {logic = (sv_density > d);}
+
+      read_sv();
+      async();
+    }
+
   }
 
   void stop_time(int mils)
@@ -326,9 +365,20 @@ int async_state = -1;
   }
 
 //CONTROL
-  void stop_eval_line(unsigned char compare, unsigned char mask)
+  int eval_line(char compare, char mask)
   {
+    read_sv();
+    return (sv_char & mask) != (compare & mask);
+  }
 
+  void stop_eval_line(char compare, char mask)
+  {
+    async_reset();
+
+    while(eval_line(compare, mask))
+    {
+      async();
+    }
   }
 
 //ASYNC
@@ -366,9 +416,10 @@ int async_state = -1;
       case LINEF:
 
         pos = read_line();
-        if(llf != 8)
+        adj = pidlf.slice(pos - CENTEROFLINE, gs, dt);
+
+        if(sv_density != 8)
         {
-          adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);
           mr_out(gs + adj);
           ml_out(gs - adj);
         }
@@ -388,6 +439,8 @@ int async_state = -1;
         break;
     }
   }
+
+
 
   void no_state()
   {

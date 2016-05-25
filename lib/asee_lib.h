@@ -38,13 +38,14 @@
   //GENERAL PID
   	class PID
   	{
-  		float lt, ct;
+  		float lt, ct, d_err;
 
   		public:
   			float pidd[4]; //err, last error, running integral, adjust
   			float w[3];
   			void set_pid(float p, float i, float d);
   			float slice(float err, float s, float dt);
+        float * get_pidd();
   	};
 
   //SPEED CONTROL
@@ -61,6 +62,8 @@
     void lf_settle(int s);
 
     void set_last_line(int ll);
+
+    int eval_line(char compare, char mask);
 
     void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
 
@@ -105,11 +108,18 @@
     void lf_t(int speed, int mils);
 
     void stop_corner();
+
+    void stop_eval_line(char compare, char mask);
+
+    void stop_density(int d, int mode);
+
     void stop_time(int mils);
 
     void break_mots();
 
     void stop_lost_line();
+
+    void stop_lf_settle(float max_err);
 
     void go();
 
