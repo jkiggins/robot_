@@ -226,23 +226,7 @@ int async_state = -1;
     return 1000;
   }
 
-  void stop_zx(int dist, int mode) //0 - stop when under 1 - stop when over
-  {
-    async_reset();
-    int rtdist = get_dist();
 
-    while(1)
-    {
-      if(rtdist != 0)
-      {
-        if(mode == 0 && rtdist <= dist){break;}
-        else if(mode == 1 && rtdist >= dist){break;}
-      }
-
-      async();
-      rtdist = get_dist();
-    }
-  }
 
   void stop_corner()
   {
@@ -322,7 +306,7 @@ int async_state = -1;
 
     last_line = 1;
 
-    //zxs.init();
+    zxs.init();
   }
 
 //CONTROL

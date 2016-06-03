@@ -79,7 +79,7 @@
 
   //ZX
     int get_dist();
-    void stop_zx(int dist);
+    void stop_zx(int dist, int mode);
   
   //INIT
     void init_a();
