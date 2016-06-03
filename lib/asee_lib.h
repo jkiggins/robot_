@@ -32,6 +32,7 @@
   #define LINEF 0
   #define DRIVED 1
   #define LFSET 2
+  #define WALLF 3
 
   void calibrate(int s, float d);
   

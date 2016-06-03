@@ -29,6 +29,8 @@ Encoder mldecode(30,29);
 Encoder mrdecode(26,27);
 
 int gs = 0; //global speed to be shared by all async methods
+int gd = 0; //global distance away from the wall to use when wall following
+int md = 0; //global mode variable to be used by any method
 int async_state = -1;
 
 //PID ################################
@@ -208,9 +210,12 @@ int async_state = -1;
   }
 
 //XZDISTANCE
+
   const int ZX_ADDR = 0x10;  // ZX Sensor I2C address
   ZX_Sensor zxs = ZX_Sensor(ZX_ADDR);
   uint8_t z_pos;
+
+  PID pidwf;
 
   int get_dist()
   {
@@ -226,14 +231,38 @@ int async_state = -1;
     return 1000;
   }
 
+  void stop_zx(int dist, int mode) //0 - stop when under 1 - stop when over
+  {
+    async_reset();
+    int rtdist = get_dist();
 
+    while(1)
+    {
+      if(rtdist != 0)
+      {
+        if(mode == 0 && rtdist <= dist){break;}
+        else if(mode == 1 && rtdist >= dist){break;}
+      }
+
+      async();
+      rtdist = get_dist();
+    }
+  }
+
+  void wf(int speed, int dist, int mode) //mode = 0 wall is on left, mode = 1 wall is on right
+  {
+    gs = speed;
+    gd = dist;
+    gm = mode;
+    async_state = WALLF;
+  }
 
   void stop_corner()
   {
     async_reset();
     read_sv();
 
-    while(svals[0] < 50 && svals[NUMLSENSORS - 1] < 50)
+    while( llf < 3 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
     {
       async();
     }
@@ -333,6 +362,10 @@ int async_state = -1;
         pida.set_pid(500, 0, 50);
         dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
         break;
+      case WALLF:
+        pidwf.set_pid(1, 0, 0);
+        gm = 1*(gm == 0) - 1*(gm == 1);
+        break;
     }
     em = 0;
   }
@@ -370,7 +403,16 @@ int async_state = -1;
         mr_out(gs - adj);
         ml_out(gs + adj);
         break;
-    }
+      ////////////////////////////////////////////////////////////////////
+      case WALLF:
+        int d = get_dist();
+        if(d != 0)
+        {
+          adj = pidwf.slice(gd - d, 10, dt);
+          mr_out(gs - adj*gm)
+          ml_out(gs + adj*gm)
+        }
+        break;
   }
 
   void no_state()
