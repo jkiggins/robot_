@@ -30,7 +30,7 @@ Encoder mrdecode(26,27);
 
 int gs = 0; //global speed to be shared by all async methods
 int gd = 0; //global distance away from the wall to use when wall following
-int md = 0; //global mode variable to be used by any method
+int gm = 0; //global mode variable to be used by any method
 int async_state = -1;
 
 //PID ################################
@@ -409,10 +409,11 @@ int async_state = -1;
         if(d != 0)
         {
           adj = pidwf.slice(gd - d, 10, dt);
-          mr_out(gs - adj*gm)
-          ml_out(gs + adj*gm)
+          mr_out(gs - adj*gm);
+          ml_out(gs + adj*gm);
         }
         break;
+      }
   }
 
   void no_state()
