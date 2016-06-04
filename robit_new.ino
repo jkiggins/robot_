@@ -13,6 +13,12 @@ void setup()
 {
   init_a();
   calibrate(110, 1);
+    
+  wf(100, 50, 0);
+  go();
+  
+  /*
+  calibrate(110, 1);
   
   lf(BASE_SPEED);
   corner_l(); //BOTTOM LEFT
@@ -34,7 +40,7 @@ void setup()
   dr(200);
   stop_time(600);
 
-  dr(-100);
+  dr(-100);5
   stop_time(150);
 
   dr(-110);
@@ -77,6 +83,7 @@ void setup()
 
   dr(BASE_SPEED);
   stop_time(250);
+  */
 
   break_mots();
 }

@@ -10,8 +10,13 @@
 
 //Calibration VARS
 float sv_scale[8];
-long low[8];
-long high[8];
+long low[8] = {1025, 1025, 1025, 1025, 1025, 1025,1025, 1025};
+long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+//calibrate values for distance sensor
+int dlow = 1025;
+int dhigh = 0;
+float dscale;
 
 float adj; //global pid adjust variable
 
@@ -189,6 +194,7 @@ int async_state = -1;
 
   void stop_deg(float a)
   {
+    async_reset();
     motion[0] = 0;
     int dir = sign_f(a);
 
@@ -211,24 +217,15 @@ int async_state = -1;
 
 //XZDISTANCE
 
-  const int ZX_ADDR = 0x10;  // ZX Sensor I2C address
-  ZX_Sensor zxs = ZX_Sensor(ZX_ADDR);
-  uint8_t z_pos;
+  //const int ZX_ADDR = 0x10;  // ZX Sensor I2C address
+  //ZX_Sensor zxs = ZX_Sensor(ZX_ADDR);
+  //uint8_t z_pos;
 
   PID pidwf;
 
   int get_dist()
   {
-    if(zxs.positionAvailable())
-    {
-      z_pos = zxs.readZ();
-      if(z_pos != ZX_ERROR)
-      {
-        return z_pos;
-      }
-    }
-
-    return 1000;
+    return (dhigh - analogRead(AD_PIN))*dscale;
   }
 
   void stop_zx(int dist, int mode) //0 - stop when under 1 - stop when over
@@ -335,7 +332,7 @@ int async_state = -1;
 
     last_line = 1;
 
-    zxs.init();
+    //zxs.init();
   }
 
 //CONTROL
@@ -364,7 +361,6 @@ int async_state = -1;
         break;
       case WALLF:
         pidwf.set_pid(1, 0, 0);
-        gm = 1*(gm == 0) - 1*(gm == 1);
         break;
     }
     em = 0;
@@ -405,12 +401,26 @@ int async_state = -1;
         break;
       ////////////////////////////////////////////////////////////////////
       case WALLF:
-        int d = get_dist();
-        if(d != 0)
+        int d_l = get_dist();
+        Serial.println(dhigh);
+        if(d_l < 70)
         {
-          adj = pidwf.slice(gd - d, 10, dt);
-          mr_out(gs - adj*gm);
-          ml_out(gs + adj*gm);
+          adj = pidwf.slice(gd - d_l, 10, dt);
+          mr_out(0 /*gs - adjDEBUG*/);
+          ml_out(0 /*gs + adjDEBUG*/);
+          blink_led();
+
+        }
+        else if(gm == 0)
+        {
+          rotate(SLOW, 1);
+          stop_deg(.2);
+          dr(SLOW);
+          stop_dd(.2);
+          rotate(-SLOW, 1);
+          stop_deg(-.2);
+
+          async_state = WALLF;
         }
         break;
       }
@@ -490,11 +500,26 @@ int async_state = -1;
 
   void calibrate(int s, float d)
   {
+    int tval;
+
+    //calibrate analog distance sensor
+    em = 0;
+    while(em < 8000)
+    {
+      tval = analogRead(AD_PIN);
+
+      if(tval < dlow){dlow = tval;}
+      else if(tval > dhigh){dhigh = tval;}
+    }
+
+    dscale = 100.0/(dhigh - dlow);
+
+/*DEBUG
+    //calibrate line sensor
     gs = s;
     async_state = DRIVED;
     async_reset();
     
-    int tval;
 
     while(dd < d)
     {
@@ -514,6 +539,7 @@ int async_state = -1;
     {
       sv_scale[i] = POSSCALE/(high[i] - low[i]);
     }
+    */
   }
 
   void go()
@@ -534,6 +560,14 @@ int async_state = -1;
     if(val < 0){return -1;}
     else if(val > 0){return 1;}
     else{return 0;}
+  }
+
+  void blink_led()
+  {
+    digitalWrite(13, HIGH);
+    delay(300);
+    digitalWrite(13, LOW);
+    delay(300);
   }
 
 //EOF

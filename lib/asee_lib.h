@@ -13,6 +13,8 @@
   #define PWMR 5
   #define PWML 9
   #define TPS_TO_POWER 10
+  #define AD_PIN 5
+  #define SLOW 100
 
   //PHYSICAL
   #define MPT 0.0208
@@ -81,9 +83,12 @@
   //ZX
     int get_dist();
     void stop_zx(int dist, int mode);
+
+    void wf(int speed, int dist, int mode);
   
   //INIT
     void init_a();
+    void blink_led();
 
   //UPDATE
     void update(float dt);
