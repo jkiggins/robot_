@@ -1,4 +1,5 @@
-#include "lib/asee_lib.h"
+#include "lib/motion.h"
+#include "lib/control.h"
 
 
 #define TIME2BOX 500
@@ -11,9 +12,11 @@
 
 void setup()
 {
-  init_a();
-  calibrate(110, 1);
-    
+  //init_a();
+  calibrate_all(0);
+
+  turn_in();
+
   wf(100, 50, 0);
   go();
   
@@ -138,6 +141,14 @@ void odd_corner()
   rotate(-160, 0);
   stop_lost_line();
   set_last_line(1);
+}
+
+void turn_in()
+{
+  rotate(SLOW, 0);
+  stop_deg(.35);
+  arc(22, SLOW);
+  stop_deg(-.2);
 }
 
 void loop()
