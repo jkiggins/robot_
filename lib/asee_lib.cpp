@@ -6,7 +6,6 @@
 #include <Arduino.h>
 #include <limits.h>
 #include <Servo.h>
-#include <ZX_Sensor.h>
 
 //Calibration VARS
 float sv_scale[8];
@@ -406,8 +405,8 @@ int async_state = -1;
         if(d_l < 70)
         {
           adj = pidwf.slice(gd - d_l, 10, dt);
-          mr_out(0 /*gs - adjDEBUG*/);
-          ml_out(0 /*gs + adjDEBUG*/);
+          mr_out(gs - adj);
+          ml_out(gs + adj);
           blink_led();
 
         }
