@@ -14,6 +14,8 @@
   #define PWML 9
   #define TPS_TO_POWER 10
   #define AD_PIN 5
+  #define WF_PIN 18
+  #define BOX_LIMIT_PIN 19
   #define SLOW 100
 
   //PHYSICAL
@@ -35,6 +37,7 @@
   #define DRIVED 1
   #define LFSET 2
   #define WALLF 3
+  #define WALLF_LIMIT 4
 
   void calibrate(int s, float d);
   
@@ -66,6 +69,7 @@
     void set_last_line(int ll);
 
     void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
+    int eval_line();
 
   //DR
     void dr_reset();
@@ -85,6 +89,7 @@
     void stop_zx(int dist, int mode);
 
     void wf(int speed, int dist, int mode);
+    void wf_limit(int speed, int mode);
   
   //INIT
     void init_a();
@@ -116,6 +121,8 @@
     void break_mots();
 
     void stop_lost_line();
+
+    void stop_box(int mode);
 
     void go();
 

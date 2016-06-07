@@ -35,184 +35,10 @@ Encoder mrdecode(26,27);
 int gs = 0; //global speed to be shared by all async methods
 int gd = 0; //global distance away from the wall to use when wall following
 int gm = 0; //global mode variable to be used by any method
+int gadj = 0;
 int async_state = -1;
 
-//PID ################################
-  void PID::set_pid(float p, float i, float d)
-  {
-    w[0] = p;w[1] = i;w[2] = d;
-    pidd[0] = 0; pidd[1] = 0; pidd[2] = 0;
-  }
-
-  float PID::slice(float err, float s, float dtl)
-  {
-    if(dtl != 0)
-    {
-      pidd[1] = pidd[0];
-      pidd[0] = err;
-      pidd[2] += ((pidd[0] + pidd[1])/2)*dtl;
-
-      pidd[2] = constrain(pidd[2], -s/w[1], s/w[1]);
-
-      pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + (pidd[0] - pidd[1])/dtl * w[2];
-    }
-
-    return pidd[3];
-  }
-
-//LF ################################
-  //VARS
-    PID pidlf;
-    long svals[8];
-    char sv_char;
-    long w, wsum, pos, llf, last_line;
-    const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
-
-  void read_sv()
-  {
-    llf = 0;
-    sv_char = 0xFF;
-
-    for(int i = 0; i < NUMLSENSORS; i++)
-    {
-      svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
-
-      sv_char &= (1 << i);
-
-      llf += (svals[i] <= 10);
-    }
-  }
-
-  int read_line()
-  {
-    read_sv();
-    w = 0;wsum = 0;
-
-    for(long i = 0; i < NUMLSENSORS; i++)
-    {
-      w += svals[i];
-      wsum += svals[i]*i*POSSCALE;
-    }
-
-    if(svals[0] > 50 && svals[NUMLSENSORS - 1] < 50){last_line = -1;}
-    else if(svals[0] < 50 && svals[NUMLSENSORS - 1] > 50){last_line = 1;}
-
-    return (wsum/w);
-  }
-
-  void lf(int s)
-  {
-    async_state = LINEF;
-    gs = s;
-  }
-
-  void lf_settle(int s)
-  {
-    async_state = LFSET;
-    gs = s;
-  }
-
-  void set_last_line(int ll)
-  {
-    last_line = ll;
-  }
-
-  void stop_sensor(int sn, int mode)
-  {
-    int snval = analogRead(svPins[sn]);
-    int osnval = snval;
-    async_reset();
-
-    while(1)
-    {
-      if(mode == 0)
-      {
-        if((osnval < HSCALE*high[sn]) && (snval >= HSCALE*high[sn])) break;
-      }
-      else if(mode == 1)
-      {
-        if((osnval > low[sn]) && (snval <= low[sn])) break;
-      }
-
-      osnval = snval;
-      snval = analogRead(svPins[sn]);
-
-      async();
-    }
-  }
-
-//DR ################################
-  //vars
-    PID pida;
-    float err;
-
-  void dr(int s)
-  {
-    async_state = DRIVED;
-    gs = s;
-  }
-
-  void stop_dd(float dist)
-  {
-    dd = 0;
-    dd_flag = 1;
-    async_reset();
-
-    int dir = sign_f(dist);
-
-    while(dd*dir < abs(dist)){async();}
-  }
-
-//ARC
-  void rotate(int s, int mode) //0 - both motors, 1 - right motor on, 2 - left motor on
-  {
-    async_state = -1;
-    if(mode == 0)
-    {
-      mr_out(s);
-      ml_out(-s);
-    }
-    else if(mode == 1)
-    {
-      mr_out(s);
-      ml_out(0);
-    }
-    else
-    {
-      ml_out(-s);
-      mr_out(0);
-    }
-  }
-
-  void arc(float r, int s)
-  {
-    async_state = -1;
-    mr_out( s*(1-(WB_L/(2*r))) );
-    ml_out( s*(1+(WB_L/(2*r))) );
-  }
-
-  void stop_deg(float a)
-  {
-    async_reset();
-    motion[0] = 0;
-    int dir = sign_f(a);
-
-    while(motion[0]*dir < abs(a))
-    {
-      async();
-    }
-  }
-
-  void stop_lost_line()
-  {
-    async_reset();   
-
-    while(llf != 8)
-    {
-      read_sv();
-      async();
-    }
-  }
+#include "motion.h"
 
 //XZDISTANCE
 
@@ -227,24 +53,6 @@ int async_state = -1;
     return (dhigh - analogRead(AD_PIN))*dscale;
   }
 
-  void stop_zx(int dist, int mode) //0 - stop when under 1 - stop when over
-  {
-    async_reset();
-    int rtdist = get_dist();
-
-    while(1)
-    {
-      if(rtdist != 0)
-      {
-        if(mode == 0 && rtdist <= dist){break;}
-        else if(mode == 1 && rtdist >= dist){break;}
-      }
-
-      async();
-      rtdist = get_dist();
-    }
-  }
-
   void wf(int speed, int dist, int mode) //mode = 0 wall is on left, mode = 1 wall is on right
   {
     gs = speed;
@@ -253,28 +61,14 @@ int async_state = -1;
     async_state = WALLF;
   }
 
-  void stop_corner()
+  void wf_limit(int speed, int mode)
   {
-    async_reset();
-    read_sv();
-
-    while( llf < 3 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
-    {
-      async();
-    }
+    gs = speed;
+    gm = mode;
+    async_state = WALLF_LIMIT;
   }
 
-  void stop_time(int mils)
-  {
-    async_reset();
-    int dt = 0;
 
-    while(dt < mils)
-    {
-      dt += em;
-      async();
-    }
-  }
 
 //UPDATE
   //VARS
@@ -304,6 +98,8 @@ int async_state = -1;
     float r = (-WB_L/2)*((rtickL + ltickL)/(rtickL - ltickL));
     float da = 0;
 
+    if(r > 100) return 0;
+
     if(r < 0)
     {
       da = -(rtickL * MPT)/(r-WB_L/2);
@@ -323,6 +119,8 @@ int async_state = -1;
     pinMode(PWMR, OUTPUT);
     pinMode(PWML, OUTPUT);
     pinMode(13, OUTPUT);
+    pinMode(WF_PIN, INPUT);
+    pinMode(BOX_LIMIT_PIN, INPUT);
 
     deps.attach(SERVOPIN);
     deps.write(SERVOHOME);
@@ -335,10 +133,7 @@ int async_state = -1;
   }
 
 //CONTROL
-  void stop_eval_line(unsigned char compare, unsigned char mask)
-  {
-
-  }
+#include "control.h"
 
 //ASYNC
   float dt;
@@ -348,18 +143,18 @@ int async_state = -1;
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.9, 0, 32);
+        pidlf.set_pid(.9, 0, 100);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
       case LFSET:
-        pidlf.set_pid(.5,0,200);
+        pidlf.set_pid(.5,0,175);
         async_state = LINEF;
       case DRIVED:
         pida.set_pid(500, 0, 50);
         dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
         break;
       case WALLF:
-        pidwf.set_pid(1, 0, 0);
+        pidwf.set_pid(.4, 0, 12);
         break;
     }
     em = 0;
@@ -376,9 +171,8 @@ int async_state = -1;
     switch(async_state)
     {
       case LINEF:
-
         pos = read_line();
-        if(llf != 8)
+        if(density != 0)
         {
           adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);
           mr_out(gs + adj);
@@ -392,37 +186,53 @@ int async_state = -1;
         }
 
         break;
-      /////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
       case DRIVED:
         adj = pida.slice(motion[0], 30, dt);
         mr_out(gs - adj);
         ml_out(gs + adj);
         break;
-      ////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
       case WALLF:
-        int d_l = get_dist();
-        Serial.println(dhigh);
-        if(d_l < 70)
-        {
-          adj = pidwf.slice(gd - d_l, 10, dt);
-          mr_out(gs - adj);
-          ml_out(gs + adj);
-          blink_led();
+      {
+          int d_l = get_dist();
+          if(d_l < 80)
+          {
+            adj = pidwf.slice(gd - d_l, 10, dt);
+            mr_out(gs + adj);
+            ml_out(gs - adj);
+            delay(100);
+          }
+          else if(gm == 0)
+          {
+            /*
+            rotate(SLOW, 1);
+            stop_deg(.2);
+            dr(SLOW);
+            stop_dd(.2);
+            rotate(-SLOW, 1);
+            stop_deg(-.2);
+            */
 
-        }
-        else if(gm == 0)
-        {
-          rotate(SLOW, 1);
-          stop_deg(.2);
-          dr(SLOW);
-          stop_dd(.2);
-          rotate(-SLOW, 1);
-          stop_deg(-.2);
-
-          async_state = WALLF;
+            async_state = WALLF;
+          }
         }
         break;
+////////////////////////////////////////////////////////////////////
+      case WALLF_LIMIT:
+      {
+        int logic = (digitalRead(18) == HIGH);
+        Serial.println(logic);
+        logic = (logic == 1) - (logic == 0);
+
+        delay(100);
+
+        int adj_l = 0.2*gs;
+        mr_out(gs - logic * adj_l);
+        ml_out(gs + logic * adj_l);
+        break;
       }
+    }
   }
 
   void no_state()
@@ -501,19 +311,6 @@ int async_state = -1;
   {
     int tval;
 
-    //calibrate analog distance sensor
-    em = 0;
-    while(em < 8000)
-    {
-      tval = analogRead(AD_PIN);
-
-      if(tval < dlow){dlow = tval;}
-      else if(tval > dhigh){dhigh = tval;}
-    }
-
-    dscale = 100.0/(dhigh - dlow);
-
-/*DEBUG
     //calibrate line sensor
     gs = s;
     async_state = DRIVED;
@@ -538,7 +335,6 @@ int async_state = -1;
     {
       sv_scale[i] = POSSCALE/(high[i] - low[i]);
     }
-    */
   }
 
   void go()
