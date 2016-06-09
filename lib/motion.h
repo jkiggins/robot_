@@ -29,8 +29,6 @@ Servo deps; //deposite servo variable
 
     return pidd[3];
   }
-  
-
 
   void lf(int s)
   {
@@ -51,8 +49,8 @@ Servo deps; //deposite servo variable
 
   void dr(int s)
   {
-    async_state = DRIVED;
-    gs = s;
+    mr_out(s);
+    ml_out(s);
   }
 
 //ARC
@@ -86,14 +84,6 @@ Servo deps; //deposite servo variable
 //WF
   PID pidwf;
 
-  void wf(int speed, int dist, int mode) //mode = 0 wall is on left, mode = 1 wall is on right
-  {
-    gs = speed;
-    gd = dist;
-    gm = mode;
-    async_state = WALLF;
-  }
-
   void wf_limit(int speed, int mode)
   {
     gs = speed;
@@ -105,6 +95,12 @@ Servo deps; //deposite servo variable
   {
     mr_out(0);
     ml_out(0);
+  }
+
+  void slow_mots(int dir_r, int dir_l)
+  {
+    mr_out(-255*dir_r);
+    ml_out(-255*dir_l);
   }
 
   void mr_out(int pwr)
@@ -177,13 +173,12 @@ void calibrate(int s, float d)
 {
   int tval;
 
-  //calibrate line sensor
-  gs = s;
-  async_state = DRIVED;
-  async_reset();
-  
+  start_count();
 
-  while(dd < d)
+  mr_out(100);
+  ml_out(100);
+
+  while(get_count() < 800)
   {
     for(int i = 0; i < NUMLSENSORS; i++)
     {
@@ -192,7 +187,6 @@ void calibrate(int s, float d)
       if(tval < low[i]) {low[i] = tval;}
       else if(tval > high[i]) {high[i] = tval;}
     }
-    async();
   }
 
   break_mots();

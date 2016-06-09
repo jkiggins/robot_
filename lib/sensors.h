@@ -1,4 +1,7 @@
-elapsedMillis em;
+
+long last;
+long counter;
+
 #define TIME2SETTLE 600
 
 //Motion and position VARS
@@ -22,19 +25,20 @@ float dscale;
     PID pidlf;
     long svals[8];
     char sv_char;
-    long w, wsum, pos, density, last_line, bin;
+    long w, wsum, pos, density, last_line;
+    char bin;
     const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
 
   void read_sv()
   {
     density = 0;
-    sv_char = 0xFF;
+    sv_char = 0x00;
 
     for(int i = 0; i < NUMLSENSORS; i++)
     {
       svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
-      bin = svals[i] > 50;
-      sv_char &= (bin << (NUMLSENSORS - i - 1) );
+      bin = (svals[i] > 50);
+      sv_char |= (bin << (NUMLSENSORS - 1 - i));
       density += bin;
     }
   }
@@ -70,50 +74,6 @@ float dscale;
   int get_dist()
   {
     return (dhigh - analogRead(AD_PIN))*dscale;
-  }
-
-//UPDATE
-  //VARS
-    long rtickL, ltickL;
-	  Encoder mldecode(30,29);
-		Encoder mrdecode(26,27);
-
-  void update(float dt)
-  {
-    rtickL = mrdecode.read();
-    mrdecode.write(0);
-
-    ltickL = mldecode.read();
-    mldecode.write(0);
-
-    if(dd_flag == 1)
-    {
-      dd += ((ltickL + rtickL)/2)*MPT;
-    }
-
-    if(rtickL != ltickL)
-    {
-      motion[0] += eval_angle();
-    }
-  }
-
-  float eval_angle()
-  {
-    float r = (-WB_L/2)*((rtickL + ltickL)/(rtickL - ltickL));
-    float da = 0;
-
-    if(r > 100) return 0;
-
-    if(r < 0)
-    {
-      da = -(rtickL * MPT)/(r-WB_L/2);
-    }
-    else
-    {
-      da = -(ltickL * MPT)/(r+WB_L/2);
-    }
-
-    return da;
   }
 
 //COLOR SENSOR
@@ -153,3 +113,21 @@ float dscale;
 
 		return ret;
 	}
+
+	//TIME
+		long get_dt()
+		{
+			long tmp = em - last;
+			last = em;
+			return tmp;
+		}
+
+		void start_count()
+		{
+			counter = em;
+		}
+
+		long get_count()
+		{
+			return (em - counter);
+		}

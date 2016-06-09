@@ -37,17 +37,6 @@
     }
   }
 
-  void stop_dd(float dist)
-  {
-    dd = 0;
-    dd_flag = 1;
-    async_reset();
-
-    int dir = sign_f(dist);
-
-    while(dd*dir < abs(dist)){async();}
-  }
-
 //INTERNAL
   void stop_time(int mils)
   {
@@ -57,18 +46,6 @@
     while(dt < mils)
     {
       dt += em;
-      async();
-    }
-  }
-
-  void stop_deg(float a)
-  {
-    async_reset();
-    motion[0] = 0;
-    int dir = sign_f(a);
-
-    while(motion[0]*dir < abs(a))
-    {
       async();
     }
   }
@@ -85,32 +62,26 @@
     }
   }
 
+  void stop_no_corner()
+  {
+    async_reset();
+    read_sv();
+
+    while( density > 4 || svals[0] > 50 || svals[NUMLSENSORS - 1] > 50 )
+    {
+      async();
+    }
+  }
+
   void no_state()
   {
     async_state = -1;
   }
 
-  void turn_r()
+  void turnr()
   {
     no_state();
-    rotate(200, 0);
-    read_sv();
-
-    async_reset();
-
-    while(!eval_line(0x80, 0x80))
-    {
-      async();
-    }
-
-    lf_settle(200);
-    stop_time(TIME2SETTLE);
-  }
-
-  void turn_l()
-  {
-    no_state();
-    rotate(-200, 0);
+    rotate(-BASE_SPEED, 0);
     read_sv();
 
     async_reset();
@@ -119,7 +90,18 @@
     {
       async();
     }
+  }
 
-    lf_settle(200);
-    stop_time(TIME2SETTLE);
+  void turnl()
+  {
+    no_state();
+    rotate(BASE_SPEED, 0);
+    read_sv();
+
+    async_reset();
+
+    while(!eval_line(0x80, 0x80))
+    {
+      async();
+    }
   }

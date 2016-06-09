@@ -1,25 +1,18 @@
-#define TIME2BOX 500
-#define TIMEBACKBOX 150
-#define DIST2BOX 1.5
-#define TIME2SETTLE 600
-#define BASE_SPEED 255
-#define SPRINT 175
-#define PRECISION_SPEED 75
-
 #include "lib/asee_lib.h"
 
 void setup()
 {
   init_a();
-
+  delay(500);
   calibrate(140, 1);
+  read_sv();
   
-  //calibrate(110, 1);
+  lf(BASE_SPEED); 
   
-  lf(BASE_SPEED);
-  corner_r(); //BOTTOM right
+  corner_r(); //BOTTOM right  
   mid_line(); 
   corner_r(); //TOP right
+  
 //ODD CORNER
   lf_settle(BASE_SPEED);
   stop_time(TIME2SETTLE);
@@ -32,14 +25,10 @@ void setup()
   stop_time(TIME2SETTLE);
   lf(BASE_SPEED);
   stop_corner();
-
-////BREAK
-  dr(-255);
   stop_lost_line();
-////BREAK
-
-  set_last_line(-1);
-
+  slow_mots(1,1);
+  stop_time(10);
+  turnl();
   lf_settle(BASE_SPEED);
   stop_time(TIME2SETTLE);
 
@@ -67,14 +56,14 @@ void setup()
   lf_settle(BASE_SPEED);
   stop_time(TIME2SETTLE);
   lf(BASE_SPEED);
-  stop_corner();
-  stop_time(TIME2SETTLE);
+  avoid_corner();
   lf(BASE_SPEED);
  
   corner_l(); //BOTTOM right MIDDLE
 
   dr(-110);
-  stop_time(300);
+  stop_time(600);
+  turnr();
   turn_out();
 
    wf_limit(175, 0);
@@ -137,26 +126,20 @@ void corner_l()
 {
   stop_corner();
   break_mots();
-  dr(110);
-  stop_time(5);
-  break_mots();
   depl();
   dr(-110);
   stop_time(50);
-  set_last_line(1);
+  turnr();
 }
 
 void corner_r()
 {
   stop_corner();
   break_mots();
-  dr(110);
-  stop_time(5);
-  break_mots();
   depr();
   dr(-110);
   stop_time(50);
-  set_last_line(-1);
+  turnl();
 }
 
 void mid_line()
@@ -164,8 +147,7 @@ void mid_line()
   lf_settle(BASE_SPEED);
   stop_time(TIME2SETTLE);
   lf(BASE_SPEED);
-  stop_corner();
-  stop_time(TIME2SETTLE);
+  avoid_corner();
 }
 
 void line()
@@ -184,20 +166,16 @@ void odd_corner()
   set_last_line(1);
 }
 
-void turn_in()
-{
-  rotate(SLOW, 0);
-  stop_deg(.35);
-  arc(22, SLOW);
-  stop_deg(-.2);
-}
-
 void turn_out()
 {
-  rotate(-BASE_SPEED, 1);
-  stop_time(200);
   arc(22, SLOW);
   stop_box(1);
+}
+
+void avoid_corner()
+{
+  stop_corner();
+  stop_no_corner();
 }
 
 void loop()

@@ -1,11 +1,11 @@
 #include "asee_lib.h"
 
-#define ENCODER_OPTIMIZE_INTERRUPTS
-#include <Encoder.h>
-
 #include <Arduino.h>
 #include <limits.h>
 #include <Servo.h>
+#include <elapsedMillis.h>
+
+elapsedMillis em;
 
 #include "sensors.h"
 #include "motion.h"
@@ -24,7 +24,6 @@
 
     deps.attach(SERVOPIN);
     deps.write(SERVOHOME);
-    dd_flag = 1;
     Serial.begin(9600);
 
     last_line = 1;
@@ -38,30 +37,19 @@
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.9, 0, 100);
+        pidlf.set_pid(.5, 0, 75);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
       case LFSET:
         pidlf.set_pid(.5,0,175);
         async_state = LINEF;
-      case DRIVED:
-        pida.set_pid(500, 0, 50);
-        dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
-        break;
-      case WALLF:
-        pidwf.set_pid(.4, 0, 12);
-        break;
     }
     em = 0;
   }
 
   void async()
   {
-    dt = em;
-    em = 0;
-
-    update(dt);
-    digitalWrite(13, LOW);
+    dt = get_dt();
 
     switch(async_state)
     {
@@ -80,38 +68,6 @@
           ml_out(last_line*160);
         }
 
-        break;
-/////////////////////////////////////////////////////////////////////
-      case DRIVED:
-        adj = pida.slice(motion[0], 30, dt);
-        mr_out(gs - adj);
-        ml_out(gs + adj);
-        break;
-////////////////////////////////////////////////////////////////////
-      case WALLF:
-      {
-          int d_l = get_dist();
-          if(d_l < 80)
-          {
-            adj = pidwf.slice(gd - d_l, 10, dt);
-            mr_out(gs + adj);
-            ml_out(gs - adj);
-            delay(100);
-          }
-          else if(gm == 0)
-          {
-            /*
-            rotate(SLOW, 1);
-            stop_deg(.2);
-            dr(SLOW);
-            stop_dd(.2);
-            rotate(-SLOW, 1);
-            stop_deg(-.2);
-            */
-
-            async_state = WALLF;
-          }
-        }
         break;
 ////////////////////////////////////////////////////////////////////
       case WALLF_LIMIT:
