@@ -1,3 +1,12 @@
+int gs = 0; //global speed to be shared by all async methods
+int gd = 0; //global distance away from the wall to use when wall following
+int gm = 0; //global mode variable to be used by any method
+int gadj = 0;
+int async_state = -1;
+float adj; //global pid adjust variable
+
+Servo deps; //deposite servo variable
+
 //PID ################################
   void PID::set_pid(float p, float i, float d)
   {
@@ -21,44 +30,7 @@
     return pidd[3];
   }
   
-//LF ################################
-  //VARS
-    PID pidlf;
-    long svals[8];
-    char sv_char;
-    long w, wsum, pos, density, last_line, bin;
-    const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
 
-  void read_sv()
-  {
-    density = 0;
-    sv_char = 0xFF;
-
-    for(int i = 0; i < NUMLSENSORS; i++)
-    {
-      svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
-      bin = svals[i] > 50;
-      sv_char &= (bin << i);
-      density += bin;
-    }
-  }
-
-  int read_line()
-  {
-    read_sv();
-    w = 0;wsum = 0;
-
-    for(long i = 0; i < NUMLSENSORS; i++)
-    {
-      w += svals[i];
-      wsum += svals[i]*i*POSSCALE;
-    }
-
-    if(svals[0] > 50 && svals[NUMLSENSORS - 1] < 50){last_line = -1;}
-    else if(svals[0] < 50 && svals[NUMLSENSORS - 1] > 50){last_line = 1;}
-
-    return (wsum/w);
-  }
 
   void lf(int s)
   {
@@ -70,18 +42,6 @@
   {
     async_state = LFSET;
     gs = s;
-  }
-
-  void set_last_line(int ll)
-  {
-    last_line = ll;
-  }
-
-  int eval_line(char compare, char mask)
-  {
-    read_sv();
-
-    return ((compare & mask) == (sv_char & mask));
   }
 
 //DR ################################
@@ -122,3 +82,123 @@
     mr_out( s*(1-(WB_L/(2*r))) );
     ml_out( s*(1+(WB_L/(2*r))) );
   }
+
+//WF
+  PID pidwf;
+
+  void wf(int speed, int dist, int mode) //mode = 0 wall is on left, mode = 1 wall is on right
+  {
+    gs = speed;
+    gd = dist;
+    gm = mode;
+    async_state = WALLF;
+  }
+
+  void wf_limit(int speed, int mode)
+  {
+    gs = speed;
+    gm = mode;
+    async_state = WALLF_LIMIT;
+  }
+
+  void break_mots()
+  {
+    mr_out(0);
+    ml_out(0);
+  }
+
+  void mr_out(int pwr)
+  {
+    pwr = constrain(pwr, -255, 255);
+
+    if(pwr > 0)
+    {
+      digitalWrite(MDR0, LOW);
+      digitalWrite(MDR1, HIGH);
+    }
+    else if(pwr == 0)
+    {
+      digitalWrite(MDR0, HIGH);
+      digitalWrite(MDR1, HIGH);
+    }
+    else
+    {
+      digitalWrite(MDR0, HIGH);
+      digitalWrite(MDR1, LOW);
+    }
+
+    analogWrite(PWMR, abs(pwr));
+  }
+
+  void ml_out(int pwr)
+  {
+    pwr = constrain(pwr, -255, 255);
+
+    if(pwr > 0)
+    {
+      digitalWrite(MDL0, LOW);
+      digitalWrite(MDL1, HIGH);
+    }
+    else if(pwr == 0)
+    {
+      digitalWrite(MDL0, HIGH);
+      digitalWrite(MDL1, HIGH);
+    }
+    else
+    {
+      digitalWrite(MDL0, HIGH);
+      digitalWrite(MDL1, LOW);
+    }
+
+    analogWrite(PWML, abs(pwr));
+  }
+
+  void depr()
+  {
+    deps.write(SERVOHOME - 45);
+    delay(250);
+    deps.write(SERVOHOME);
+  }
+
+  void depl()
+  {
+    deps.write(SERVOHOME + 45);
+    delay(250);
+    deps.write(SERVOHOME);
+  }
+
+  void go()
+  {
+    async_reset();
+    while(1){async();}
+  }
+
+void calibrate(int s, float d)
+{
+  int tval;
+
+  //calibrate line sensor
+  gs = s;
+  async_state = DRIVED;
+  async_reset();
+  
+
+  while(dd < d)
+  {
+    for(int i = 0; i < NUMLSENSORS; i++)
+    {
+      tval = analogRead(svPins[i]);
+
+      if(tval < low[i]) {low[i] = tval;}
+      else if(tval > high[i]) {high[i] = tval;}
+    }
+    async();
+  }
+
+  break_mots();
+
+  for(int i = 0; i < NUMLSENSORS; i++)
+  {
+    sv_scale[i] = POSSCALE/(high[i] - low[i]);
+  }
+}

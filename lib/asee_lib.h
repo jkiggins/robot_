@@ -39,6 +39,11 @@
   #define WALLF 3
   #define WALLF_LIMIT 4
 
+  typedef struct 
+  {
+    int r,g,b;
+  }RGB; 
+
   void calibrate(int s, float d);
   
   //GENERAL PID
@@ -69,7 +74,7 @@
     void set_last_line(int ll);
 
     void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
-    int eval_line();
+    int eval_line(char compare, char mask);
 
   //DR
     void dr_reset();
@@ -104,6 +109,11 @@
     void async();
 
     void no_state();
+
+  //COLOR SENSOR
+    void setup_color();
+    void clock_color();
+    RGB read_color();
 
   //CONTROL
     void depr();

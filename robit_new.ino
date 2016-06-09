@@ -1,6 +1,3 @@
-#include "lib/asee_lib.h"
-
-
 #define TIME2BOX 500
 #define TIMEBACKBOX 150
 #define DIST2BOX 1.5
@@ -9,10 +6,13 @@
 #define SPRINT 175
 #define PRECISION_SPEED 75
 
+#include "lib/asee_lib.h"
+
 void setup()
 {
   init_a();
-  calibrate(110, 1);
+
+  calibrate(140, 1);
   
   //calibrate(110, 1);
   
@@ -35,7 +35,7 @@ void setup()
 
 ////BREAK
   dr(-255);
-  stop_time(30);
+  stop_lost_line();
 ////BREAK
 
   set_last_line(-1);
@@ -74,17 +74,24 @@ void setup()
   corner_l(); //BOTTOM right MIDDLE
 
   dr(-110);
-  stop_time(200);
+  stop_time(300);
   turn_out();
 
-   wf_limit(120, 0);
+   wf_limit(175, 0);
   //stop_box(0);
-  stop_time(725);
+  stop_time(750);
   //stop_box(1);
   //stop_time(500);
   stop_box(1);
-  dr(-110);
-  stop_time(5);
+
+  dr(-150);
+  stop_time(200);
+  wf_limit(140, 0);
+  stop_box(1);
+
+  dr(-150);
+  stop_time(25);
+  break_mots();
   depr();
 
 delay(150);
@@ -92,7 +99,7 @@ delay(150);
   rotate(BASE_SPEED, 1);
   stop_time(550);
   dr(200);
-  stop_time(500);
+  stop_time(1000);
 
   /*line();
   corner_r(); //BOTTOM RIGHT MIDDLE
@@ -131,11 +138,11 @@ void corner_l()
   stop_corner();
   break_mots();
   dr(110);
-  stop_time(200);
+  stop_time(5);
   break_mots();
   depl();
   dr(-110);
-  stop_time(200);
+  stop_time(50);
   set_last_line(1);
 }
 
@@ -144,11 +151,11 @@ void corner_r()
   stop_corner();
   break_mots();
   dr(110);
-  stop_time(200);
+  stop_time(5);
   break_mots();
   depr();
   dr(-110);
-  stop_time(200);
+  stop_time(50);
   set_last_line(-1);
 }
 
@@ -188,7 +195,7 @@ void turn_in()
 void turn_out()
 {
   rotate(-BASE_SPEED, 1);
-  stop_deg(-.35);
+  stop_time(200);
   arc(22, SLOW);
   stop_box(1);
 }
