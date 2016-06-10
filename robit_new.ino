@@ -15,7 +15,15 @@ void setup()
 //ODD CORNER
   settle_for_time();
   lf(BASE_SPEED);
-  corner_r(); //right TOP CENTER
+  //corner_r(); //right TOP CENTER
+
+  break_corner();
+  dr(100);
+  stop_time(200);
+  depr();
+  dr(-100);
+  stop_time(150);
+  turnl();
 ///////////////////////
 
 //MIDDLE TURN
@@ -23,11 +31,17 @@ void setup()
   lf(BASE_SPEED);
 
   break_corner();
+   dr(100);
+  stop_time(200);
+  dr(-100);
+  stop_time(250);
  
   turnl();
   settle_for_time();
 
   corner_l(); //TOP right MIDDLE
+
+  
 
   settle_for_time();
   
@@ -37,11 +51,28 @@ void setup()
  
   corner_l(); //BOTTOM right MIDDLEs
 
-  rotate(-BASE_SPEED, 1);
-  stop_eval_line(0x80, 0x80);
+  rotate(-150, 0);
+  stop_eval_line(0x01, 0x01);
+  slow_mots(1, -1, 12);
   dr(100);
   stop_time(900);
-  //stop_box();
+  stop_box(1);
+  dr(-100);
+  stop_time(750);
+  dr(80);
+  stop_box(1);
+  dr(-150);
+  stop_time(50);
+  depr();
+
+  arc(-1, BASE_SPEED);
+  stop_time(200);
+  dr(200);
+  stop_time(100);
+  arc(-1, BASE_SPEED);
+  stop_time(150);
+   dr(200);
+  stop_time(1000);
 
   mots_off();
 }
@@ -50,6 +81,8 @@ void setup()
 void corner_l()
 {
   break_corner();
+  dr(100);
+  stop_time(200);
   depl();
   turnr();
 }
@@ -57,6 +90,8 @@ void corner_l()
 void corner_r()
 {
   break_corner();
+  dr(100);
+  stop_time(200);
   depr();
   turnl();
 }
@@ -68,7 +103,7 @@ void mid_line()
   avoid_corner();
   lf(BASE_SPEED);
   stop_time(600);
-  lf(100);
+  lf(BASE_SPEED);
 }
 
 void line()
@@ -100,7 +135,7 @@ void avoid_corner()
 
 void settle_for_time()
 {
-  lf_settle(SBASE_SPEED);
+  lf_settle(BASE_SPEED);
   stop_time(TIME2SETTLE);
 }
 

@@ -37,11 +37,11 @@
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.7, 0, 80);
+        pidlf.set_pid(.5, 0, 170);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
       case LFSET:
-        pidlf.set_pid(.9,0,100);
+        pidlf.set_pid(.5,0,200);
         async_state = LINEF;
     }
     get_dt();

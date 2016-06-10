@@ -6,8 +6,8 @@
   #define DIST2BOX 1.5
   #define TIME2SETTLE 800
   #define MID 2000
-  #define BASE_SPEED 160
-  #define SBASE_SPEED 130
+  #define BASE_SPEED 255
+  #define SBASE_SPEED 120
   #define SPRINT 255
   #define PRECISION_SPEED 75
   #define TURN_SPEED 200
@@ -133,7 +133,7 @@
 
     void break_mots(int t);
     void mots_off();
-    void slow_mots(int dir_r, int dir_l);
+    void slow_mots(int dir_l, int dir_r, int t);
     void break_corner();
 
     void stop_lost_line();

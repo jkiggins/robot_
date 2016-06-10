@@ -63,7 +63,7 @@
   {
     read_sv();
     async_reset();
-    while( density < 3 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
+    while( density <= 3 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
     {
       read_sv();
       async();

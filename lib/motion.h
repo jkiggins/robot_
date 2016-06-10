@@ -95,7 +95,7 @@ void break_mots(int t)
 {
   mr_out(-255);
   ml_out(-255);
-
+  no_state();
   stop_time(t);
   mots_off();
 }
@@ -106,10 +106,13 @@ void mots_off()
   ml_out(0);
 }
 
-void slow_mots(int dir_r, int dir_l)
+void slow_mots(int dir_l, int dir_r, int t)
 {
   mr_out(-255*dir_r);
   ml_out(-255*dir_l);
+  no_state();
+  stop_time(t);
+  mots_off();
 }
 
 void mr_out(int pwr)
@@ -196,7 +199,7 @@ void break_corner()
   no_state();
   stop_no_corner();
 
-  break_mots(600/get_count());
+  break_mots(700/get_count());
 }
 
 void calibrate(int s, float d)
