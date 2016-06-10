@@ -55,18 +55,6 @@
   }RGB; 
 
   void calibrate(int s, float d);
-  
-  //GENERAL PID
-  	class PID
-  	{
-  		float lt, ct;
-
-  		public:
-  			float pidd[4]; //err, last error, running integral, adjust
-  			float w[3];
-  			void set_pid(float p, float i, float d);
-  			float slice(float err, float dt);
-  	};
 
   //SPEED CONTROL
     void mr_out(int speed);
