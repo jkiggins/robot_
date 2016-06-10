@@ -8,28 +8,27 @@ float adj; //global pid adjust variable
 Servo deps; //deposite servo variable
 
 //PID ################################
-  void PID::set_pid(float p, float i, float d)
+void PID::set_pid(float p, float i, float d)
+{
+  w[0] = p;w[1] = i;w[2] = d;
+  pidd[0] = 0; pidd[1] = 0; pidd[2] = 0;
+}
+
+float PID::slice(float err, float dtl)
+{
+  if(dtl != 0)
   {
-    w[0] = p;w[1] = i;w[2] = d;
-    pidd[0] = 0; pidd[1] = 0; pidd[2] = 0;
+    pidd[1] = pidd[0];
+    pidd[0] = err;
+    pidd[2] += ((pidd[0] + pidd[1])/2)*dtl;
+
+    pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + (pidd[0] - pidd[1])/dtl * w[2];
   }
 
-  float PID::slice(float err, float s, float dtl)
-  {
-    if(dtl != 0)
-    {
-      pidd[1] = pidd[0];
-      pidd[0] = err;
-      pidd[2] += ((pidd[0] + pidd[1])/2)*dtl;
+  return pidd[3];
+}
 
-      pidd[2] = constrain(pidd[2], -s/w[1], s/w[1]);
-
-      pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + (pidd[0] - pidd[1])/dtl * w[2];
-    }
-
-    return pidd[3];
-  }
-
+//LF
   void lf(int s)
   {
     async_state = LINEF;
@@ -43,131 +42,162 @@ Servo deps; //deposite servo variable
   }
 
 //DR ################################
-  //vars
-    PID pida;
-    float err;
+//vars
+  PID pida;
+  float err;
 
-  void dr(int s)
-  {
-    mr_out(s);
-    ml_out(s);
-  }
+void dr(int s)
+{
+  no_state();
+  mr_out(s);
+  ml_out(s);
+}
 
 //ARC
-  void rotate(int s, int mode) //0 - both motors, 1 - right motor on, 2 - left motor on
+void rotate(int s, int mode) //0 - both motors, 1 - right motor on, 2 - left motor on
+{
+  no_state();
+  if(mode == 0)
   {
-    async_state = -1;
-    if(mode == 0)
-    {
-      mr_out(s);
-      ml_out(-s);
-    }
-    else if(mode == 1)
-    {
-      mr_out(s);
-      ml_out(0);
-    }
-    else
-    {
-      ml_out(-s);
-      mr_out(0);
-    }
+    mr_out(s);
+    ml_out(-s);
   }
-
-  void arc(float r, int s)
+  else if(mode == 1)
   {
-    async_state = -1;
-    mr_out( s*(1-(WB_L/(2*r))) );
-    ml_out( s*(1+(WB_L/(2*r))) );
-  }
-
-//WF
-  PID pidwf;
-
-  void wf_limit(int speed, int mode)
-  {
-    gs = speed;
-    gm = mode;
-    async_state = WALLF_LIMIT;
-  }
-
-  void break_mots()
-  {
-    mr_out(0);
+    mr_out(s);
     ml_out(0);
   }
-
-  void slow_mots(int dir_r, int dir_l)
+  else
   {
-    mr_out(-255*dir_r);
-    ml_out(-255*dir_l);
+    ml_out(-s);
+    mr_out(0);
+  }
+}
+
+void arc(float r, int s)
+{
+  no_state();
+  mr_out( s*(1-(WB_L/(2*r))) );
+  ml_out( s*(1+(WB_L/(2*r))) );
+}
+
+//WF
+PID pidwf;
+
+void wf_limit(int speed, int mode)
+{
+  gs = speed;
+  gm = mode;
+  async_state = WALLF_LIMIT;
+}
+
+void break_mots(int t)
+{
+  mr_out(-255);
+  ml_out(-255);
+
+  stop_time(t);
+  mots_off();
+}
+
+void mots_off()
+{
+  mr_out(0);
+  ml_out(0);
+}
+
+void slow_mots(int dir_r, int dir_l)
+{
+  mr_out(-255*dir_r);
+  ml_out(-255*dir_l);
+}
+
+void mr_out(int pwr)
+{
+  pwr = constrain(pwr, -255, 255);
+
+  if(pwr > 0)
+  {
+    digitalWrite(MDR0, LOW);
+    digitalWrite(MDR1, HIGH);
+  }
+  else if(pwr == 0)
+  {
+    digitalWrite(MDR0, HIGH);
+    digitalWrite(MDR1, HIGH);
+  }
+  else
+  {
+    digitalWrite(MDR0, HIGH);
+    digitalWrite(MDR1, LOW);
   }
 
-  void mr_out(int pwr)
+  analogWrite(PWMR, abs(pwr));
+}
+
+void ml_out(int pwr)
+{
+  pwr = constrain(pwr, -255, 255);
+
+  if(pwr > 0)
   {
-    pwr = constrain(pwr, -255, 255);
-
-    if(pwr > 0)
-    {
-      digitalWrite(MDR0, LOW);
-      digitalWrite(MDR1, HIGH);
-    }
-    else if(pwr == 0)
-    {
-      digitalWrite(MDR0, HIGH);
-      digitalWrite(MDR1, HIGH);
-    }
-    else
-    {
-      digitalWrite(MDR0, HIGH);
-      digitalWrite(MDR1, LOW);
-    }
-
-    analogWrite(PWMR, abs(pwr));
+    digitalWrite(MDL0, LOW);
+    digitalWrite(MDL1, HIGH);
+  }
+  else if(pwr == 0)
+  {
+    digitalWrite(MDL0, HIGH);
+    digitalWrite(MDL1, HIGH);
+  }
+  else
+  {
+    digitalWrite(MDL0, HIGH);
+    digitalWrite(MDL1, LOW);
   }
 
-  void ml_out(int pwr)
-  {
-    pwr = constrain(pwr, -255, 255);
+  analogWrite(PWML, abs(pwr));
+}
 
-    if(pwr > 0)
-    {
-      digitalWrite(MDL0, LOW);
-      digitalWrite(MDL1, HIGH);
-    }
-    else if(pwr == 0)
-    {
-      digitalWrite(MDL0, HIGH);
-      digitalWrite(MDL1, HIGH);
-    }
-    else
-    {
-      digitalWrite(MDL0, HIGH);
-      digitalWrite(MDL1, LOW);
-    }
+void depr()
+{
+  deps.write(SERVOHOME - 45);
+  delay(250);
+  deps.write(SERVOHOME);
+}
 
-    analogWrite(PWML, abs(pwr));
-  }
+void depl()
+{
+  deps.write(SERVOHOME + 45);
+  delay(250);
+  deps.write(SERVOHOME);
+}
 
-  void depr()
-  {
-    deps.write(SERVOHOME - 45);
-    delay(250);
-    deps.write(SERVOHOME);
-  }
+void go()
+{
+  async_reset();
+  while(1){async();}
+}
 
-  void depl()
-  {
-    deps.write(SERVOHOME + 45);
-    delay(250);
-    deps.write(SERVOHOME);
-  }
+void turnr()
+{
+  set_last_line(1);
+}
 
-  void go()
-  {
-    async_reset();
-    while(1){async();}
-  }
+void turnl()
+{
+  set_last_line(-1);
+}
+
+void break_corner()
+{
+  stop_corner();
+  mots_off();
+  start_count();
+  no_state();
+  stop_no_corner();
+
+  break_mots(600/get_count());
+}
 
 void calibrate(int s, float d)
 {
@@ -178,7 +208,7 @@ void calibrate(int s, float d)
   mr_out(100);
   ml_out(100);
 
-  while(get_count() < 800)
+  while(get_count() < 1000)
   {
     for(int i = 0; i < NUMLSENSORS; i++)
     {
@@ -189,7 +219,7 @@ void calibrate(int s, float d)
     }
   }
 
-  break_mots();
+  mots_off();
 
   for(int i = 0; i < NUMLSENSORS; i++)
   {

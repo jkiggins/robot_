@@ -5,7 +5,7 @@
 #include <Servo.h>
 #include <elapsedMillis.h>
 
-elapsedMillis em;
+
 
 #include "sensors.h"
 #include "motion.h"
@@ -37,14 +37,14 @@ elapsedMillis em;
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.5, 0, 75);
+        pidlf.set_pid(.7, 0, 80);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
       case LFSET:
-        pidlf.set_pid(.5,0,175);
+        pidlf.set_pid(.9,0,100);
         async_state = LINEF;
     }
-    em = 0;
+    get_dt();
   }
 
   void async()
@@ -57,15 +57,14 @@ elapsedMillis em;
         pos = read_line();
         if(density != 0)
         {
-          adj = pidlf.slice(CENTEROFLINE - pos, gs, dt);
+          adj = pidlf.slice(CENTEROFLINE - pos, dt);
           mr_out(gs + adj);
           ml_out(gs - adj);
         }
         else
         {
-          digitalWrite(13, HIGH);
-          mr_out(-last_line*160);
-          ml_out(last_line*160);
+          mr_out(-last_line*TURN_SPEED);
+          ml_out(last_line*TURN_SPEED);
         }
 
         break;

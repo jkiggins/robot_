@@ -4,10 +4,13 @@
   #define TIME2BOX 500
   #define TIMEBACKBOX 150
   #define DIST2BOX 1.5
-  #define TIME2SETTLE 600
-  #define BASE_SPEED 120
-  #define SPRINT 175
+  #define TIME2SETTLE 800
+  #define MID 2000
+  #define BASE_SPEED 160
+  #define SBASE_SPEED 130
+  #define SPRINT 255
   #define PRECISION_SPEED 75
+  #define TURN_SPEED 200
 
   //MISC
   #define TPM 600
@@ -44,6 +47,7 @@
   #define LINEF 0
   #define LFSET 1
   #define WALLF_LIMIT 2
+  #define NO_STATE -1
 
   typedef struct 
   {
@@ -61,7 +65,7 @@
   			float pidd[4]; //err, last error, running integral, adjust
   			float w[3];
   			void set_pid(float p, float i, float d);
-  			float slice(float err, float s, float dt);
+  			float slice(float err, float dt);
   	};
 
   //SPEED CONTROL
@@ -81,6 +85,7 @@
 
     void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
     int eval_line(char compare, char mask);
+    void stop_eval_line(char compare, char mask);
 
   //DR
     void dr_reset();
@@ -126,8 +131,10 @@
     void stop_no_corner();
     void stop_time(int mils);
 
-    void break_mots();
+    void break_mots(int t);
+    void mots_off();
     void slow_mots(int dir_r, int dir_l);
+    void break_corner();
 
     void stop_lost_line();
 
@@ -139,6 +146,7 @@
     long get_dt();
     void start_count();
     long get_count();
+    long get_abs_time();
 
 
   //toolbox

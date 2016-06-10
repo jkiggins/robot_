@@ -2,7 +2,9 @@
 long last;
 long counter;
 
-#define TIME2SETTLE 600
+elapsedMillis em;
+long eu;
+
 
 //Motion and position VARS
 float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/second
@@ -25,8 +27,9 @@ float dscale;
     PID pidlf;
     long svals[8];
     char sv_char;
-    long w, wsum, pos, density, last_line;
+    long w, wsum, pos, density;
     char bin;
+    int last_line;
     const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
 
   void read_sv()
@@ -131,3 +134,20 @@ float dscale;
 		{
 			return (em - counter);
 		}
+
+		long get_abs_time()
+		{
+			return em;
+		}
+/*
+		void start_count_u()
+		{
+			eu = 0;
+		}
+
+		long get_count_u()
+		{
+			return eu;
+		}
+		*/
+

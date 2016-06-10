@@ -1,9 +1,8 @@
 //LF
   void stop_sensor(int sn, int mode) // 0 - stop when high, 1 - stop when low
-  {
-    async_reset();
+  {    
     int logic = 1;
-
+    async_reset();
     while(logic)
     {
       read_sv();
@@ -24,7 +23,17 @@
       read_sv();
       async();
     }
-  } 
+  }
+
+  void stop_eval_line(char compare, char mask)
+  {
+    async_reset();
+
+    while(!eval_line(compare, mask))
+    {
+      async();
+    }
+  }
 
 //DISTANCE
   void stop_box(int mode)
@@ -39,13 +48,12 @@
 
 //INTERNAL
   void stop_time(int mils)
-  {
+  {    
+    start_count();
     async_reset();
-    int dt = 0;
 
-    while(dt < mils)
+    while(get_count() < mils)
     {
-      dt += em;
       async();
     }
   }
@@ -53,55 +61,27 @@
 //EXTENDED
   void stop_corner()
   {
-    async_reset();
     read_sv();
-
-    while( density < 4 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
+    async_reset();
+    while( density < 3 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
     {
+      read_sv();
       async();
     }
   }
 
   void stop_no_corner()
-  {
-    async_reset();
+  {    
     read_sv();
-
-    while( density > 4 || svals[0] > 50 || svals[NUMLSENSORS - 1] > 50 )
+    async_reset();
+    while(density > 3 || svals[0] > 50 || svals[NUMLSENSORS - 1] > 50)
     {
+      read_sv();
       async();
     }
   }
 
   void no_state()
   {
-    async_state = -1;
-  }
-
-  void turnr()
-  {
-    no_state();
-    rotate(-BASE_SPEED, 0);
-    read_sv();
-
-    async_reset();
-
-    while(!eval_line(0x01, 0x01))
-    {
-      async();
-    }
-  }
-
-  void turnl()
-  {
-    no_state();
-    rotate(BASE_SPEED, 0);
-    read_sv();
-
-    async_reset();
-
-    while(!eval_line(0x80, 0x80))
-    {
-      async();
-    }
+    async_state = NO_STATE;
   }
