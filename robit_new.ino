@@ -3,11 +3,9 @@
 void setup()
 {
   init_a();
-  delay(500);
-  calibrate(140, 1);
+  calibrate(140, 1); 
   
-  lf(BASE_SPEED); 
-  
+  lf(BASE_SPEED);
   corner_r(); //BOTTOM right
   mid_line();     
   corner_r(); //TOP right
@@ -15,8 +13,9 @@ void setup()
 //ODD CORNER
   settle_for_time();
   lf(BASE_SPEED);
-  //corner_r(); //right TOP CENTER
+  corner_r(); //right TOP CENTER
 
+/*
   break_corner();
   dr(100);
   stop_time(200);
@@ -24,21 +23,18 @@ void setup()
   dr(-100);
   stop_time(150);
   turnl();
+  */
 ///////////////////////
 
 //MIDDLE TURN
   settle_for_time();
-  lf(BASE_SPEED);
+  lf(SBASE_SPEED);
 
   break_corner();
-   dr(100);
-  stop_time(200);
-  dr(-100);
-  stop_time(250);
  
   turnl();
   settle_for_time();
-
+  lf(BASE_SPEED);
   corner_l(); //TOP right MIDDLE
 
   
@@ -47,7 +43,6 @@ void setup()
   
   lf(BASE_SPEED);
   avoid_corner();
-  lf(BASE_SPEED);
  
   corner_l(); //BOTTOM right MIDDLEs
 
@@ -81,8 +76,6 @@ void setup()
 void corner_l()
 {
   break_corner();
-  dr(100);
-  stop_time(200);
   depl();
   turnr();
 }
@@ -90,8 +83,6 @@ void corner_l()
 void corner_r()
 {
   break_corner();
-  dr(100);
-  stop_time(200);
   depr();
   turnl();
 }
@@ -99,11 +90,8 @@ void corner_r()
 void mid_line()
 {
   settle_for_time();
-  lf(SPRINT);
+  lf(BASE_SPEED);
   avoid_corner();
-  lf(BASE_SPEED);
-  stop_time(600);
-  lf(BASE_SPEED);
 }
 
 void line()
@@ -135,8 +123,9 @@ void avoid_corner()
 
 void settle_for_time()
 {
-  lf_settle(BASE_SPEED);
+  lf_settle(SBASE_SPEED);
   stop_time(TIME2SETTLE);
+  no_state();
 }
 
 void loop()

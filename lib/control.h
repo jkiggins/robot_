@@ -1,3 +1,4 @@
+#include "digital_edge.h"
 //LF
   void stop_sensor(int sn, int mode) // 0 - stop when high, 1 - stop when low
   {    
@@ -63,7 +64,7 @@
   {
     read_sv();
     async_reset();
-    while( density <= 3 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
+    while( density <= 2 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
     {
       read_sv();
       async();
@@ -77,6 +78,16 @@
     while(density > 3 || svals[0] > 50 || svals[NUMLSENSORS - 1] > 50)
     {
       read_sv();
+      async();
+    }
+  }
+
+  void stop_pb(int mode)
+  {
+    edge pb(33);
+    async_reset();
+    while(!pb.is_rising())
+    {
       async();
     }
   }

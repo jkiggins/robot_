@@ -1,12 +1,17 @@
 #ifndef asee_h
   #define asee_h
 
+//#define INC_PID
+ 
+  #define PINC_PIN 33
+  #define DINC_PIN 32
+
   #define TIME2BOX 500
   #define TIMEBACKBOX 150
   #define DIST2BOX 1.5
-  #define TIME2SETTLE 800
+  #define TIME2SETTLE 500
   #define MID 2000
-  #define BASE_SPEED 255
+  #define BASE_SPEED 200
   #define SBASE_SPEED 120
   #define SPRINT 255
   #define PRECISION_SPEED 75
@@ -59,13 +64,13 @@
   //GENERAL PID
   	class PID
   	{
-  		float lt, ct;
 
   		public:
   			float pidd[4]; //err, last error, running integral, adjust
   			float w[3];
   			void set_pid(float p, float i, float d);
   			float slice(float err, float dt);
+        void inc_pid();
   	};
 
   //SPEED CONTROL
@@ -139,6 +144,8 @@
     void stop_lost_line();
 
     void stop_box(int mode);
+
+    void stop_pb();
 
     void go();
 

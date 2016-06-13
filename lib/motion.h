@@ -7,6 +7,16 @@ float adj; //global pid adjust variable
 
 Servo deps; //deposite servo variable
 
+#ifdef INC_PID 
+  #include "digital_edge.h"
+  edge p_inc(PINC_PIN);
+  edge d_inc(DINC_PIN);
+  int pv, dv;
+  float D_P = .1;
+  float D_D = 40.0;
+  int count;
+#endif
+
 //PID ################################
 void PID::set_pid(float p, float i, float d)
 {
@@ -27,6 +37,39 @@ float PID::slice(float err, float dtl)
 
   return pidd[3];
 }
+
+void PID::inc_pid()
+{
+  #ifdef INC_PID 
+    pv = p_inc.is_falling();
+    dv = d_inc.is_falling();
+    if(pv && d_inc.get_last() == 1){
+        w[0] += D_P;
+    }
+    else if(dv && p_inc.get_last() == 1){
+        w[2] += D_D;
+    }
+    else if(pv && d_inc.get_last() == 0)
+    {
+      w[2] -= D_D;
+      D_P /= 2;
+    }
+    else if(dv && p_inc.get_last() == 0)
+    {
+      w[0] -= D_P;
+      D_D /= 2;
+    }
+
+    if(count % 500)
+    {
+      Serial.print("P: ");Serial.println(w[0]);
+      Serial.print("D: ");Serial.println(w[2]);
+      Serial.println();
+    }
+    count++;
+  #endif
+}
+
 
 //LF
   void lf(int s)
@@ -124,11 +167,6 @@ void mr_out(int pwr)
     digitalWrite(MDR0, LOW);
     digitalWrite(MDR1, HIGH);
   }
-  else if(pwr == 0)
-  {
-    digitalWrite(MDR0, HIGH);
-    digitalWrite(MDR1, HIGH);
-  }
   else
   {
     digitalWrite(MDR0, HIGH);
@@ -141,15 +179,9 @@ void mr_out(int pwr)
 void ml_out(int pwr)
 {
   pwr = constrain(pwr, -255, 255);
-
   if(pwr > 0)
   {
     digitalWrite(MDL0, LOW);
-    digitalWrite(MDL1, HIGH);
-  }
-  else if(pwr == 0)
-  {
-    digitalWrite(MDL0, HIGH);
     digitalWrite(MDL1, HIGH);
   }
   else
@@ -199,7 +231,7 @@ void break_corner()
   no_state();
   stop_no_corner();
 
-  break_mots(700/get_count());
+  break_mots(900/get_count());
 }
 
 void calibrate(int s, float d)
@@ -208,10 +240,7 @@ void calibrate(int s, float d)
 
   start_count();
 
-  mr_out(100);
-  ml_out(100);
-
-  while(get_count() < 1000)
+  while(get_count() < 3000)
   {
     for(int i = 0; i < NUMLSENSORS; i++)
     {
