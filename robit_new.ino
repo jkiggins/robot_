@@ -3,7 +3,13 @@
 void setup()
 {
   init_a();
-  calibrate(140, 1); 
+  calibrate(140, 1);
+  stop_pb();
+
+//FIND THE LINE
+  dr(100);
+  avoid_corner();
+///////////////////
   
   lf(BASE_SPEED);
   corner_r(); //BOTTOM right
@@ -34,7 +40,7 @@ void setup()
  
   turnl();
   settle_for_time();
-  lf(BASE_SPEED);
+  lf(SBASE_SPEED);
   corner_l(); //TOP right MIDDLE
 
   
@@ -67,7 +73,7 @@ void setup()
   arc(-1, BASE_SPEED);
   stop_time(150);
    dr(200);
-  stop_time(1000);
+  stop_time(700);
 
   mots_off();
 }

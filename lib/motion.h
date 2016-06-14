@@ -8,7 +8,6 @@ float adj; //global pid adjust variable
 Servo deps; //deposite servo variable
 
 #ifdef INC_PID 
-  #include "digital_edge.h"
   edge p_inc(PINC_PIN);
   edge d_inc(DINC_PIN);
   int pv, dv;
@@ -231,16 +230,15 @@ void break_corner()
   no_state();
   stop_no_corner();
 
-  break_mots(900/get_count());
+  break_mots(750/get_count());
 }
 
 void calibrate(int s, float d)
 {
   int tval;
+  edge pb(33);
 
-  start_count();
-
-  while(get_count() < 3000)
+  while(!pb.is_rising())
   {
     for(int i = 0; i < NUMLSENSORS; i++)
     {
@@ -250,8 +248,6 @@ void calibrate(int s, float d)
       else if(tval > high[i]) {high[i] = tval;}
     }
   }
-
-  mots_off();
 
   for(int i = 0; i < NUMLSENSORS; i++)
   {

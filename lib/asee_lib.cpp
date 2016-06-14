@@ -6,6 +6,8 @@
 #include <elapsedMillis.h>
 #include <EEPROMex.h>
 
+#include "digital_edge.h"
+
 #include "sensors.h"
 #include "motion.h"
 #include "control.h"
@@ -49,7 +51,7 @@
 
         break;
       case LFSET:
-        pidlf.set_pid(.3,0,200);
+        pidlf.set_pid(.4,0,220);
         async_state = LINEF;
     }
     get_dt();

@@ -82,7 +82,7 @@
     }
   }
 
-  void stop_pb(int mode)
+  void stop_pb()
   {
     edge pb(33);
     async_reset();
