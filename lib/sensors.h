@@ -1,5 +1,10 @@
+
+long last;
+long counter;
+
 elapsedMillis em;
-#define TIME2SETTLE 600
+long eu;
+
 
 //Motion and position VARS
 float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/second
@@ -17,19 +22,22 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     PID pidlf;
     long svals[8];
     char sv_char;
-    long w, wsum, pos, density, last_line, bin;
+
+    long w, wsum, pos, density;
+    char bin;
+    int last_line;
     const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A10};
 
   void read_sv()
   {
     density = 0;
-    sv_char = 0xFF;
+    sv_char = 0x00;
 
     for(int i = 0; i < NUMLSENSORS; i++)
     {
       svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
-      bin = svals[i] > 50;
-      sv_char &= (bin << (NUMLSENSORS - i - 1) );
+      bin = (svals[i] > 50);
+      sv_char |= (bin << (NUMLSENSORS - 1 - i));
       density += bin;
     }
   }
@@ -111,7 +119,7 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     return da;
   }
 
-//COLOR SENSOR
+/*/COLOR SENSOR
   #define COLOR_CLOCK 25
   #define COLOR_DATA_DIGI 31
   #define COLOR_DATA_ANALOG A20
@@ -148,3 +156,39 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 		return ret;
 	}
+	*/
+
+	//TIME
+		long get_dt()
+		{
+			long tmp = em - last;
+			last = em;
+			return tmp;
+		}
+
+		void start_count()
+		{
+			counter = em;
+		}
+
+		long get_count()
+		{
+			return (em - counter);
+		}
+
+		long get_abs_time()
+		{
+			return em;
+		}
+/*
+		void start_count_u()
+		{
+			eu = 0;
+		}
+
+		long get_count_u()
+		{
+			return eu;
+		}
+		*/
+

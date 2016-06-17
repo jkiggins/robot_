@@ -1,9 +1,9 @@
+#include "digital_edge.h"
 //LF
   void stop_sensor(int sn, int mode) // 0 - stop when high, 1 - stop when low
-  {
-    async_reset();
+  {    
     int logic = 1;
-
+    async_reset();
     while(logic)
     {
       read_sv();
@@ -24,7 +24,28 @@
       read_sv();
       async();
     }
-  } 
+  }
+
+  void stop_eval_line(char compare, char mask)
+  {
+    async_reset();
+
+    while(!eval_line(compare, mask))
+    {
+      async();
+    }
+  }
+
+  void stop_dd(float dist)
+  {
+    dd = 0;
+    dd_flag = 1;
+    async_reset();
+
+    int dir = sign_f(dist);
+
+    while(dd*dir < abs(dist)){async();}
+  }
 
 //DISTANCE
   void stop_box(int mode)
@@ -36,50 +57,47 @@
       async();
     }
   }
-/*
-  void stop_dd(float dist)
-  {
-    dd = 0;
-    dd_flag = 1;
-    async_reset();
-
-    int dir = sign_f(dist);
-
-    while(dd*dir < abs(dist)){async();}
-  }*/
 
 //INTERNAL
   void stop_time(int mils)
-  {
+  {    
+    start_count();
     async_reset();
-    int dt = 0;
 
-    while(dt < mils)
-    {
-      dt += em;
-      async();
-    }
-  }/*
-
-  void stop_deg(float a)
-  {
-    async_reset();
-    motion[0] = 0;
-    int dir = sign_f(a);
-
-    while(motion[0]*dir < abs(a))
+    while(get_count() < mils)
     {
       async();
     }
-  }*/
+  }
 
 //EXTENDED
   void stop_corner()
   {
-    async_reset();
     read_sv();
+    async_reset();
+    while( density <= 2 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
+    {
+      read_sv();
+      async();
+    }
+  }
 
-    while( density < 4 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
+  void stop_no_corner()
+  {    
+    read_sv();
+    async_reset();
+    while(density > 3 || svals[0] > 50 || svals[NUMLSENSORS - 1] > 50)
+    {
+      read_sv();
+      async();
+    }
+  }
+
+  void stop_pb()
+  {
+    edge pb(33);
+    async_reset();
+    while(!pb.is_rising())
     {
       async();
     }
@@ -87,39 +105,5 @@
 
   void no_state()
   {
-    async_state = -1;
-  }
-
-  void turn_r()
-  {
-    no_state();
-    rotate(200, 0);
-    read_sv();
-
-    async_reset();
-
-    while(!eval_line(0x80, 0x80))
-    {
-      async();
-    }
-
-    lf_settle(200);
-    stop_time(TIME2SETTLE);
-  }
-
-  void turn_l()
-  {
-    no_state();
-    rotate(-200, 0);
-    read_sv();
-
-    async_reset();
-
-    while(!eval_line(0x01, 0x01))
-    {
-      async();
-    }
-
-    lf_settle(200);
-    stop_time(TIME2SETTLE);
+    async_state = NO_STATE;
   }

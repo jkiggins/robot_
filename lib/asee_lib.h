@@ -1,6 +1,22 @@
 #ifndef asee_h
-
   #define asee_h
+
+//#define INC_PID
+ 
+  #define PINC_PIN 33
+  #define DINC_PIN 32
+
+  #define TIME2BOX 500
+  #define TIMEBACKBOX 150
+  #define DIST2BOX 1.5
+  #define TIME2SETTLE 500
+  #define MID 2000
+  #define BASE_SPEED 200
+  #define SBASE_SPEED 120
+  #define SPRINT 255
+  #define PRECISION_SPEED 75
+  #define TURN_SPEED 200
+
   //MISC
   #define TPM 600
   #define LAST_DIMENSION 1
@@ -12,6 +28,7 @@
   #define MDL1 11
   #define PWMR 5
   #define PWML 9
+
   #define TPS_TO_POWER 10
   #define AD_PIN 5
   #define WF_PIN 18
@@ -34,10 +51,9 @@
 
   //Async flags
   #define LINEF 0
-  #define DRIVED 1
-  #define LFSET 2
-  #define WALLF 3
-  #define WALLF_LIMIT 4
+  #define LFSET 1
+  #define WALLF_LIMIT 2
+  #define NO_STATE -1
 
   typedef struct 
   {
@@ -49,13 +65,13 @@
   //GENERAL PID
   	class PID
   	{
-  		float lt, ct;
 
   		public:
   			float pidd[4]; //err, last error, running integral, adjust
   			float w[3];
   			void set_pid(float p, float i, float d);
-  			float slice(float err, float s, float dt);
+  			float slice(float err, float dt);
+        void inc_pid();
   	};
 
   //SPEED CONTROL
@@ -75,35 +91,27 @@
 
     void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
     int eval_line(char compare, char mask);
+    void stop_eval_line(char compare, char mask);
 
-  /*/DR
+  //DR
     void dr_reset();
     void dr(int s);
-
-    void stop_dd(float dist);
-    */
+    
 
   //ARC
     void arc_reset();
     void rotate(int speed, int mode); //0 - both motors, 1 - right motor on, 2 - left motor on
     void arc(float r, int speed);
 
-    void stop_deg(float a);
-
   //ZX
     int get_dist();
     void stop_zx(int dist, int mode);
 
-    void wf(int speed, int dist, int mode);
     void wf_limit(int speed, int mode);
   
   //INIT
     void init_a();
     void blink_led();
-
-  //UPDATE
-    void update(float dt);
-    float eval_angle();
 
   //ASYNC
     void async_reset();
@@ -120,22 +128,36 @@
     void depr();
     void depl();
 
-    void turnr(int mode);
-    void turnl(int mode);
+    void turnr();
+    void turnl();
 
     void lf_d(int speed, float d);
     void lf_t(int speed, int mils);
 
     void stop_corner();
+    void stop_no_corner();
     void stop_time(int mils);
 
-    void break_mots();
+    void break_mots(int t);
+    void mots_off();
+    void slow_mots(int dir_l, int dir_r, int t);
+    void break_corner();
+
+    void stop_dd(float dist);
 
     void stop_lost_line();
 
     void stop_box(int mode);
 
+    void stop_pb();
+
     void go();
+
+  //TIME
+    long get_dt();
+    void start_count();
+    long get_count();
+    long get_abs_time();
 
 
   //toolbox
