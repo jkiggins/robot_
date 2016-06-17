@@ -23,7 +23,7 @@ float dscale;
     long svals[8];
     char sv_char;
     long w, wsum, pos, density, last_line, bin;
-    const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A17};
+    const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A10};
 
   void read_sv()
   {
@@ -75,17 +75,17 @@ float dscale;
 //UPDATE
   //VARS
     long rtickL, ltickL;
-	  Encoder mldecode(30,29);
-		Encoder mrdecode(26,27);
+	  Encoder mldecode(32,25);
+		Encoder mrdecode(4,3);
 
   void update(float dt)
   {
     rtickL = mrdecode.read();
-    mrdecode.write(0);
+   mrdecode.write(0);
 
     ltickL = mldecode.read();
     mldecode.write(0);
-
+    
     if(dd_flag == 1)
     {
       dd += ((ltickL + rtickL)/2)*MPT;

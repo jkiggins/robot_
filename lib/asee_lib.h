@@ -8,7 +8,7 @@
   //MOTOR CONTROL
   #define MDR0 7
   #define MDR1 8
-  #define MDL0 10
+  #define MDL0 12
   #define MDL1 11
   #define PWMR 5
   #define PWML 9

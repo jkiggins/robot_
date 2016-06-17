@@ -12,7 +12,7 @@ void setup()
 {
   init_a();
 
-  calibrate(140, 1);
+  calibrate(140,4);
   
   //calibrate(110, 1);
   
