@@ -76,11 +76,12 @@
     void stop_sensor(int sn, int mode); //mode: 0 - rising, 1 - falling, 2 - rise then fall
     int eval_line(char compare, char mask);
 
-  //DR
+  /*/DR
     void dr_reset();
     void dr(int s);
 
     void stop_dd(float dist);
+    */
 
   //ARC
     void arc_reset();

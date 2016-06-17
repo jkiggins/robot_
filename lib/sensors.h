@@ -4,18 +4,13 @@ elapsedMillis em;
 //Motion and position VARS
 float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/second
 
-float dd; //distance travled, used for relative distance manuvers
-int dd_flag; //when set to 1 dd is incremented with encoders
+//float dd; //distance travled, used for relative distance manuvers
+//int dd_flag; //when set to 1 dd is incremented with encoders
 
 //Calibration VARS
 float sv_scale[8];
 long low[8] = {1025, 1025, 1025, 1025, 1025, 1025,1025, 1025};
 long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-//calibrate values for distance sensor
-int dlow = 1025;
-int dhigh = 0;
-float dscale;
 
 //LF ################################
   //VARS

@@ -1,8 +1,8 @@
 #include "asee_lib.h"
-
+/*
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
-
+*/
 #include <Arduino.h>
 #include <limits.h>
 #include <Servo.h>
@@ -24,7 +24,7 @@
 
     deps.attach(SERVOPIN);
     deps.write(SERVOHOME);
-    dd_flag = 1;
+    //dd_flag = 1;
     Serial.begin(9600);
 
     last_line = 1;
@@ -44,10 +44,10 @@
       case LFSET:
         pidlf.set_pid(.5,0,175);
         async_state = LINEF;
-      case DRIVED:
+      /*case DRIVED:
         pida.set_pid(500, 0, 50);
         dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
-        break;
+        break;*/
       case WALLF:
         pidwf.set_pid(.4, 0, 12);
         break;
@@ -57,11 +57,8 @@
 
   void async()
   {
-    dt = em;
-    em = 0;
 
     update(dt);
-    digitalWrite(13, LOW);
 
     switch(async_state)
     {
@@ -81,13 +78,13 @@
         }
 
         break;
-/////////////////////////////////////////////////////////////////////
+/*////////////////////////////////////////////////////////////////////
       case DRIVED:
         adj = pida.slice(motion[0], 30, dt);
         mr_out(gs - adj);
         ml_out(gs + adj);
         break;
-////////////////////////////////////////////////////////////////////
+/*///////////////////////////////////////////////////////////////////
       case WALLF:
       {
           int d_l = get_dist();

@@ -36,7 +36,7 @@
       async();
     }
   }
-
+/*
   void stop_dd(float dist)
   {
     dd = 0;
@@ -46,7 +46,7 @@
     int dir = sign_f(dist);
 
     while(dd*dir < abs(dist)){async();}
-  }
+  }*/
 
 //INTERNAL
   void stop_time(int mils)
@@ -59,7 +59,7 @@
       dt += em;
       async();
     }
-  }
+  }/*
 
   void stop_deg(float a)
   {
@@ -71,7 +71,7 @@
     {
       async();
     }
-  }
+  }*/
 
 //EXTENDED
   void stop_corner()

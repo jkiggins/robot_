@@ -1,5 +1,5 @@
 int gs = 0; //global speed to be shared by all async methods
-int gd = 0; //global distance away from the wall to use when wall following
+//int gd = 0; //global distance away from the wall to use when wall following
 int gm = 0; //global mode variable to be used by any method
 int gadj = 0;
 int async_state = -1;
@@ -44,7 +44,7 @@ Servo deps; //deposite servo variable
     gs = s;
   }
 
-//DR ################################
+/*/DR ################################
   //vars
     PID pida;
     float err;
@@ -53,7 +53,7 @@ Servo deps; //deposite servo variable
   {
     async_state = DRIVED;
     gs = s;
-  }
+  }*/
 
 //ARC
   void rotate(int s, int mode) //0 - both motors, 1 - right motor on, 2 - left motor on
