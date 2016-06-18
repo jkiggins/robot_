@@ -23,13 +23,7 @@
   #define TPM 600
   #define LAST_DIMENSION 1
 
-  //MOTOR CONTROL
-  #define MDR0 7
-  #define MDR1 8
-  #define MDL0 12
-  #define MDL1 11
-  #define PWMR 5
-  #define PWML 9
+
 
   #define TPS_TO_POWER 10
   #define AD_PIN 5
@@ -37,15 +31,11 @@
   #define BOX_LIMIT_PIN 19
   #define SLOW 100
 
-  //PHYSICAL
-  #define MPT 0.0208
-  #define WB_L 8.962
+
 
   //OTHER MISC
-  #define MAX_ANGLE 3.2
-  #define SERVOPIN 23
-  #define SERVOHOME 90
-  #define NUMLSENSORS 8
+
+
   #define POSSCALE 100.0
   #define MINPOWER 70
   #define HSCALE .82
@@ -65,17 +55,7 @@
 
   void calibrate();
 
-  //GENERAL PID
-  	class PID
-  	{
 
-  		public:
-  			float pidd[4]; //err, last error, running integral, adjust
-  			float w[3];
-  			void set_pid(float p, float i, float d);
-  			float slice(float err, int dt);
-        void inc_pid();
-  	};
 
   //UPDATE
     void update(int dt);

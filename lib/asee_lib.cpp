@@ -1,19 +1,15 @@
 #include "asee_lib.h"
 
-#define ENCODER_OPTIMIZE_INTERRUPTS
-#include <Encoder.h>
+
 
 #include <Arduino.h>
 #include <limits.h>
 #include <Servo.h>
-#include <elapsedMillis.h>
-#include <EEPROMex.h>
+
 
 #include "digital_edge.h"
-
 #include "toolbox.h"
 #include "sensors.h"
-
 #ifdef DEBUG
   #include "debug.h"
 #endif
@@ -74,37 +70,17 @@
     switch(async_state)
     {
       case LINEF:
-        pos = read_line();
-        if(density != 0){
-          digitalWrite(13, LOW);
-          adj = pidlf.slice(CENTEROFLINE - pos, dt);
-          Serial.println(gs + adj);
-          mr_out(gs + adj);
-          ml_out(gs - adj);
-        }else{
-          digitalWrite(13, HIGH);
-          mr_out(0);
-          ml_out(0);
-          delay(300);
-          digitalWrite(13, LOW);
-          delay(100);
+
         }
         break;
 ////////////////////////////////////////////////////////////////////
       case DRIVED:
-        adj = pida.slice(motion[0], dt);
-        mr_out(gs - adj);
-        ml_out(gs + adj);
+
         break;
 ////////////////////////////////////////////////////////////////////
       case WALLF_LIMIT:
       {
-        int logic = (digitalRead(18) == HIGH);
-        logic = (logic == 1) - (logic == 0);
 
-        int adj_l = 0.2*gs;
-        mr_out(gs - logic * adj_l);
-        ml_out(gs + logic * adj_l);
         break;
       }
     }
