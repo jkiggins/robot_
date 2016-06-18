@@ -103,7 +103,23 @@
     }
   }
 
+  void stop_eval_dip(char compare, char mask)
+  {
+    async_reset();
+
+    while(!eval_dip(compare, mask))
+    {
+      async();
+    }
+  }
+
   void no_state()
   {
     async_state = NO_STATE;
+  }
+
+  void go()
+  {
+    async_reset();
+    while(1){async();}
   }

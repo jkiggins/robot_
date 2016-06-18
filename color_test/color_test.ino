@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #include "G:/college/ASEE/ENR259281/final/robit_new/lib/asee_lib.h"
 
 void setup()

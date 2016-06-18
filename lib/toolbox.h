@@ -19,3 +19,31 @@
     digitalWrite(13, LOW);
     delay(300);
   }
+
+void print_arrf(float * arr, int n)
+{
+  for (int i = 0; i < n; ++i)
+  {
+    Serial.print(arr[i]);
+    if(i != (n-1))
+      Serial.print(",");
+  }
+}
+
+void print_arri(int * arr, int n)
+{
+  for (int i = 0; i < n; ++i)
+  {
+    Serial.print(arr[i]);
+    if(i != (n-1))
+      Serial.print(",");
+  }
+}
+
+void print_char_bitwise(char ch)
+{
+  for (int i = 8; i >= 0; --i)
+  {
+    Serial.print((int)(ch >> i) & 0x01);
+  }
+}

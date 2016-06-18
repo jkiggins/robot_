@@ -1,32 +1,30 @@
 
 long last;
 long counter;
-
-elapsedMillis em;
-long eu;
-
+elapsedMicros eu;
 
 //Motion and position VARS
 float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/second
 
-//float dd; //distance travled, used for relative distance manuvers
-//int dd_flag; //when set to 1 dd is incremented with encoders
+float dd; //distance travled, used for relative distance manuvers
+int dd_flag; //when set to 1 dd is incremented with encoders
 
 //Calibration VARS
 float sv_scale[8];
-long low[8] = {1025, 1025, 1025, 1025, 1025, 1025,1025, 1025};
-long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+int low[8] = {1025, 1025, 1025, 1025, 1025, 1025,1025, 1025};
+int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 //LF ################################
   //VARS
     PID pidlf;
-    long svals[8];
+    int svals[8];
     char sv_char;
 
-    long w, wsum, pos, density;
+    int w, wsum, pos, density;
     char bin;
     int last_line;
-    const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A10};
+
+    const int svPins[NUMLSENSORS] = {A10,A0,A1,A2,A3,A6,A7,A8};
 
   void read_sv()
   {
@@ -36,7 +34,7 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     for(int i = 0; i < NUMLSENSORS; i++)
     {
       svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
-      bin = (svals[i] > 50);
+      bin = (svals[i] > 30);
       sv_char |= (bin << (NUMLSENSORS - 1 - i));
       density += bin;
     }
@@ -47,7 +45,7 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     read_sv();
     w = 0;wsum = 0;
 
-    for(long i = 0; i < NUMLSENSORS; i++)
+    for(int i = 0; i < NUMLSENSORS; i++)
     {
       w += svals[i];
       wsum += svals[i]*i*POSSCALE;
@@ -69,26 +67,20 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     return (sv_char & mask) == (compare & mask);
   }
 
-//GET DIST
-  int get_dist()
-  {
-    return (dhigh - analogRead(AD_PIN))*dscale;
-  }
-
 //UPDATE
   //VARS
     long rtickL, ltickL;
-	  Encoder mldecode(32,25);
-		Encoder mrdecode(4,3);
+    Encoder mldecode(32,25);
+  	Encoder mrdecode(4,3);
 
-  void update(float dt)
+  void update(int dt)
   {
     rtickL = mrdecode.read();
-   mrdecode.write(0);
+    mrdecode.write(0);
 
     ltickL = mldecode.read();
     mldecode.write(0);
-    
+
     if(dd_flag == 1)
     {
       dd += ((ltickL + rtickL)/2)*MPT;
@@ -117,6 +109,20 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     }
 
     return da;
+  }
+
+  int eval_dip(char compare, char mask)
+  {
+  	//pins 29, 30 ,31 ,33
+  	char sw = 0x00;
+  	mask &= 0x0F;
+
+  	sw |= (digitalRead(33) << 0);
+  	sw |= (digitalRead(31) << 1);
+  	sw |= (digitalRead(30) << 2);
+  	sw |= (digitalRead(29) << 3);
+
+  	return (sw & mask) == (compare & mask);
   }
 
 /*/COLOR SENSOR
@@ -161,34 +167,22 @@ long high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	//TIME
 		long get_dt()
 		{
-			long tmp = em - last;
-			last = em;
-			return tmp;
+      long tmp = eu;
+      eu = 0;
+      return tmp;
 		}
 
 		void start_count()
 		{
-			counter = em;
+			counter = millis();
 		}
 
 		long get_count()
 		{
-			return (em - counter);
+			return (millis() - counter);
 		}
 
 		long get_abs_time()
 		{
-			return em;
+			return millis();
 		}
-/*
-		void start_count_u()
-		{
-			eu = 0;
-		}
-
-		long get_count_u()
-		{
-			return eu;
-		}
-		*/
-

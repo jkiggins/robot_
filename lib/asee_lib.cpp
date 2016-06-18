@@ -1,12 +1,8 @@
 #include "asee_lib.h"
-<<<<<<< HEAD
-/*
+
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
-*/
-=======
 
->>>>>>> new_motors
 #include <Arduino.h>
 #include <limits.h>
 #include <Servo.h>
@@ -15,10 +11,17 @@
 
 #include "digital_edge.h"
 
+#include "toolbox.h"
 #include "sensors.h"
+
+#ifdef DEBUG
+  #include "debug.h"
+#endif
+
 #include "motion.h"
 #include "control.h"
-#include "toolbox.h"
+
+
 
 //INIT
   void init_a()
@@ -31,40 +34,32 @@
     deps.attach(SERVOPIN);
     deps.write(SERVOHOME);
 
-    dd_flag = 1;
+    pinMode(29, INPUT_PULLUP);pinMode(30, INPUT_PULLUP);pinMode(31, INPUT_PULLUP);pinMode(33, INPUT_PULLUP);
+
+    dd_flag = 0;
+    digitalWrite(13, LOW);
 
     Serial.begin(9600);
 
     last_line = 1;
-
-    #ifdef INC_PID
-      pinMode(PINC_PIN, INPUT_PULLUP);
-      pinMode(DINC_PIN, INPUT_PULLUP);
-    #endif
   }
 
 //ASYNC
-  float dt;
+  int dt;
 
   void async_reset()
   {
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.8, 0, 80);
+        pidlf.set_pid(.4, 0, 10);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
-
-        #ifdef INC_PID
-          //pidlf.set_pid(EEPROM.readFloat(0), 0, EEPROM.readFloat(4));
-          pidlf.set_pid(.8, 0, 80);
-        #endif
-
         break;
       case LFSET:
-        pidlf.set_pid(.4,0,220);
+        pidlf.set_pid(.6, 0, 200);
         async_state = LINEF;
       case DRIVED:
-        pida.set_pid(500, 0, 50);
+        pidlf.set_pid(1, 0, 0);
         dd = 0;motion[0] = 0; adj = 0;dd_flag = 1;
         break;
     }
@@ -73,37 +68,31 @@
 
   void async()
   {
-     dt = get_dt();
+    dt = get_dt();
     update(dt);
 
     switch(async_state)
     {
       case LINEF:
-        #ifdef INC_PID
-          pidlf.inc_pid();
-        #endif
-        pos = read_line();        
-        if(density != 0)
-        {
+        pos = read_line();
+        if(density != 0){
+          digitalWrite(13, LOW);
           adj = pidlf.slice(CENTEROFLINE - pos, dt);
+          Serial.println(gs + adj);
           mr_out(gs + adj);
           ml_out(gs - adj);
+        }else{
+          digitalWrite(13, HIGH);
+          mr_out(0);
+          ml_out(0);
+          delay(300);
+          digitalWrite(13, LOW);
+          delay(100);
         }
-        else
-        {
-          #ifndef INC_PID
-            mr_out(-last_line*TURN_SPEED);
-            ml_out(last_line*TURN_SPEED);
-          #else
-            mr_out(0);
-            ml_out(0);
-          #endif
-        }
-
         break;
 ////////////////////////////////////////////////////////////////////
       case DRIVED:
-        adj = pida.slice(motion[0], 30, dt);
+        adj = pida.slice(motion[0], dt);
         mr_out(gs - adj);
         ml_out(gs + adj);
         break;
@@ -111,7 +100,6 @@
       case WALLF_LIMIT:
       {
         int logic = (digitalRead(18) == HIGH);
-        Serial.println(logic);
         logic = (logic == 1) - (logic == 0);
 
         int adj_l = 0.2*gs;

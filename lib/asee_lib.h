@@ -1,8 +1,10 @@
 #ifndef asee_h
   #define asee_h
 
-//#define INC_PID
- 
+//MODES
+  //#define INC_PID
+  //s#define DEBUG
+
   #define PINC_PIN 33
   #define DINC_PIN 32
 
@@ -38,7 +40,7 @@
   //PHYSICAL
   #define MPT 0.0208
   #define WB_L 8.962
-  
+
   //OTHER MISC
   #define MAX_ANGLE 3.2
   #define SERVOPIN 23
@@ -53,15 +55,16 @@
   #define LINEF 0
   #define LFSET 1
   #define WALLF_LIMIT 2
+  #define DRIVED 3
   #define NO_STATE -1
 
-  typedef struct 
+  typedef struct
   {
     int r,g,b;
-  }RGB; 
+  }RGB;
 
-  void calibrate(int s, float d);
-  
+  void calibrate();
+
   //GENERAL PID
   	class PID
   	{
@@ -70,9 +73,13 @@
   			float pidd[4]; //err, last error, running integral, adjust
   			float w[3];
   			void set_pid(float p, float i, float d);
-  			float slice(float err, float dt);
+  			float slice(float err, int dt);
         void inc_pid();
   	};
+
+  //UPDATE
+    void update(int dt);
+    float eval_angle();
 
   //SPEED CONTROL
     void mr_out(int speed);
@@ -96,7 +103,7 @@
   //DR
     void dr_reset();
     void dr(int s);
-    
+
 
   //ARC
     void arc_reset();
@@ -108,7 +115,7 @@
     void stop_zx(int dist, int mode);
 
     void wf_limit(int speed, int mode);
-  
+
   //INIT
     void init_a();
     void blink_led();
@@ -152,6 +159,10 @@
     void stop_pb();
 
     void go();
+
+    int eval_dip(char compare, char mask);
+
+    void stop_eval_dip(char compare, char mask);
 
   //TIME
     long get_dt();

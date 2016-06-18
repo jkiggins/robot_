@@ -7,7 +7,7 @@ float adj; //global pid adjust variable
 
 Servo deps; //deposite servo variable
 
-#ifdef INC_PID 
+#ifdef INC_PID
   edge p_inc(PINC_PIN);
   edge d_inc(DINC_PIN);
   int pv, dv;
@@ -23,7 +23,7 @@ void PID::set_pid(float p, float i, float d)
   pidd[0] = 0; pidd[1] = 0; pidd[2] = 0;
 }
 
-float PID::slice(float err, float dtl)
+float PID::slice(float err, int dtl)
 {
   if(dtl != 0)
   {
@@ -39,7 +39,7 @@ float PID::slice(float err, float dtl)
 
 void PID::inc_pid()
 {
-  #ifdef INC_PID 
+  #ifdef INC_PID
     pv = p_inc.is_falling();
     dv = d_inc.is_falling();
     if(pv && d_inc.get_last() == 1){
@@ -205,12 +205,6 @@ void depl()
   deps.write(SERVOHOME);
 }
 
-void go()
-{
-  async_reset();
-  while(1){async();}
-}
-
 void turnr()
 {
   set_last_line(1);
@@ -232,12 +226,10 @@ void break_corner()
   break_mots(750/get_count());
 }
 
-void calibrate(int s, float d)
+void calibrate()
 {
   int tval;
-  edge pb(33);
-
-  while(!pb.is_rising())
+  while(eval_dip(0xFF, 0x0F))
   {
     for(int i = 0; i < NUMLSENSORS; i++)
     {
@@ -246,10 +238,18 @@ void calibrate(int s, float d)
       if(tval < low[i]) {low[i] = tval;}
       else if(tval > high[i]) {high[i] = tval;}
     }
+
+    #ifdef DEBUG
+      debug_calibration();
+    #endif
   }
 
   for(int i = 0; i < NUMLSENSORS; i++)
   {
     sv_scale[i] = POSSCALE/(high[i] - low[i]);
   }
+
+  #ifdef DEBUG
+    while(1){debug_line_sensor(1);}
+  #endif
 }
