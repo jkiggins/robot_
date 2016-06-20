@@ -59,12 +59,12 @@
   }
 
 //INTERNAL
-  void stop_time(int mils)
+  void stop_time(u_long mils)
   {    
-    start_count();
+    start_count_m();
     async_reset();
 
-    while(get_count() < mils)
+    while(get_count_m() < mils)
     {
       async();
     }
@@ -93,13 +93,15 @@
     }
   }
 
-  void stop_pb()
+  void stop_dip(int state, int pin)
   {
-    edge pb(33);
+    edge pb(pin);
+    pb.eval();
     async_reset();
-    while(!pb.is_rising())
+    while(!pb.toggle)
     {
       async();
+      pb.eval();
     }
   }
 

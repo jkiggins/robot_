@@ -6,7 +6,7 @@
 	class edge
 	{
 	private:
-		void wait_pin_settle(int pin, int mils)
+		void wait_pin_settle(int pin, u_long mils)
 		{
 			value = digitalRead(pin);
 			count = millis();
@@ -21,33 +21,24 @@
 			}
 		}
 	public:
-		int last_value, value, pin;
-		long count;
+		int rising, falling, toggle, state, value, pin;
+		u_long count;
+
 		edge(int arg_pin)
 		{
 			pin = arg_pin;
-			last_value = -1;
+			this->eval();
+			value = -1;
+			state = -1;
 		}
 
-		int is_rising()
+		void eval()
 		{
 			wait_pin_settle(pin, 10);
-			int tmp = (last_value == 0 && value == 1);
-			last_value = value;
-			return tmp;
-		}
-
-		int is_falling()
-		{
-			wait_pin_settle(pin, 10);
-			int tmp = (last_value == 1 && value == 0);
-			last_value = value;
-			return tmp;
-		}
-
-		int get_last()
-		{
-			return last_value;
+			rising = (state == 0 && value == 1);
+			falling = (state == 1 && value == 0);
+			toggle = (rising || falling);
+			state = value;
 		}
 	};
 

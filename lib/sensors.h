@@ -1,7 +1,6 @@
-
-long last;
-long counter;
+elapsedMillis em;
 elapsedMicros eu;
+u_long counteru, counterm;
 
 //Motion and position VARS
 float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/second
@@ -25,6 +24,7 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     int last_line;
 
     const int svPins[NUMLSENSORS] = {A10,A0,A1,A2,A3,A6,A7,A8};
+		//const int svPins[NUMLSENSORS] = {A8,A7,A6,A3,A2,A1,A0,A10};
 
   void read_sv()
   {
@@ -33,8 +33,15 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
     for(int i = 0; i < NUMLSENSORS; i++)
     {
-      svals[i] = (analogRead(svPins[i]) - low[i])*sv_scale[i];
-      bin = (svals[i] > 30);
+    	svals[i] = 0;
+      svals[i] += analogRead(svPins[i]);
+      svals[i] += analogRead(svPins[i]);
+      svals[i] += analogRead(svPins[i]);
+      svals[i] += analogRead(svPins[i]);
+
+      svals[i] = ((svals[i]/4) - low[i])*sv_scale[i];
+
+      bin = (svals[i] > 50);
       sv_char |= (bin << (NUMLSENSORS - 1 - i));
       density += bin;
     }
@@ -56,6 +63,7 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
     return (wsum/w);
   }
+
   void set_last_line(int ll)
   {
     last_line = ll;
@@ -76,10 +84,13 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   void update(int dt)
   {
     rtickL = mrdecode.read();
-    mrdecode.write(0);
+    if(rtickL != 0) {mrdecode.write(0);}
 
     ltickL = mldecode.read();
-    mldecode.write(0);
+    if(ltickL != 0) {mldecode.write(0);}
+
+    motion[1] = 1000000*(rtickL/dt);
+    motion[2] = 1000000*(ltickL/dt);
 
     if(dd_flag == 1)
     {
@@ -125,64 +136,76 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   	return (sw & mask) == (compare & mask);
   }
 
-/*/COLOR SENSOR
-  #define COLOR_CLOCK 25
-  #define COLOR_DATA_DIGI 31
-  #define COLOR_DATA_ANALOG A20
-
-  int ambient;
-
-  void setup_color()
-  {
-  	//begin read, get ambient data
-		pinMode(COLOR_DATA_DIGI, OUTPUT);
-		digitalWrite(COLOR_DATA_DIGI, LOW);
-		digitalWrite(COLOR_DATA_DIGI, HIGH);
-		ambient = analogRead(COLOR_DATA_ANALOG);
-  }
-
-  void clock_color()
-  {
-  	digitalWrite(COLOR_CLOCK, LOW);
-  	digitalWrite(COLOR_CLOCK, HIGH);
-  }
-
-	RGB read_color()
-	{
-		RGB ret;
-
-		clock_color();
-		ret.r = analogRead(COLOR_DATA_ANALOG) - ambient;
-
-		clock_color();
-		ret.g = analogRead(COLOR_DATA_ANALOG) - ambient;
-
-		clock_color();
-		ret.b = analogRead(COLOR_DATA_ANALOG) - ambient;
-
-		return ret;
-	}
-	*/
-
 	//TIME
-		long get_dt()
+		u_long get_dt_u()
 		{
       long tmp = eu;
       eu = 0;
       return tmp;
 		}
 
-		void start_count()
+    u_long get_dt_m()
+    {
+      long tmp = em;
+      em = 0;
+      return tmp;
+    }
+
+    void start_count_u()
 		{
-			counter = millis();
+      counteru = micros();
+    }
+
+		void start_count_m()
+		{
+			counterm = millis();
 		}
 
-		long get_count()
+		u_long get_count_m()
 		{
-			return (millis() - counter);
+			return (millis() - counterm);
 		}
 
-		long get_abs_time()
+    u_long get_count_u()
+    {
+      return (micros() - counteru);
+    }
+
+		u_long get_abs_time_m()
 		{
 			return millis();
 		}
+
+#ifdef DEBUG
+  #include "debug.h"
+#endif
+
+//CALIBRATE
+void calibrate()
+{
+  int tval;
+  while(eval_dip(0xFF, 0x0F))
+  {
+    for(int i = 0; i < NUMLSENSORS; i++)
+    {
+      tval = analogRead(svPins[i]);
+
+      if(tval < low[i]) {low[i] = tval;}
+      else if(tval > high[i]) {high[i] = tval;}
+    }
+
+    #ifdef DEBUG
+      debug_calibration();
+    #endif
+  }
+
+  for(int i = 0; i < NUMLSENSORS; i++)
+  {
+    sv_scale[i] = POSSCALE/(high[i] - low[i]);
+  }
+
+  #ifdef DEBUG
+    while(1){debug_line_sensor(0);}
+    delay(100);
+  #endif
+}

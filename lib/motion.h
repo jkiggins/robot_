@@ -8,12 +8,16 @@ float adj; //global pid adjust variable
 Servo deps; //deposite servo variable
 
 #ifdef INC_PID
-  edge p_inc(PINC_PIN);
-  edge d_inc(DINC_PIN);
+  edge p_inc(D0);
+  edge d_inc(D1);
+  edge p_adj(D2);
+  edge d_adj(D3);
   int pv, dv;
-  float D_P = .1;
-  float D_D = 40.0;
+  float D_P = .05;
+  float D_D = 50;
   int count;
+  int last_err = 32000;
+  int err_track;
 #endif
 
 //PID ################################
@@ -40,23 +44,30 @@ float PID::slice(float err, int dtl)
 void PID::inc_pid()
 {
   #ifdef INC_PID
-    pv = p_inc.is_falling();
-    dv = d_inc.is_falling();
-    if(pv && d_inc.get_last() == 1){
-        w[0] += D_P;
-    }
-    else if(dv && p_inc.get_last() == 1){
-        w[2] += D_D;
-    }
-    else if(pv && d_inc.get_last() == 0)
+    p_inc.eval();d_inc.eval();
+    p_adj.eval();d_adj.eval();
+
+    if(p_inc.toggle)
     {
-      w[2] -= D_D;
-      D_P /= 2;
+      w[0] += D_P;
     }
-    else if(dv && p_inc.get_last() == 0)
+    else if(d_inc.toggle)
     {
-      w[0] -= D_P;
-      D_D /= 2;
+      w[2] += D_D;
+    }
+    else if(p_adj.toggle)
+    {
+      if(p_inc.state)
+        D_P *= 2;
+      else
+        D_P /= 2;
+    }
+    else if(d_adj.toggle)
+    {
+      if(d_inc.state)
+        D_D *= 2;
+      else
+        D_D /= 2;
     }
 
     if(count % 500)
@@ -134,8 +145,8 @@ void wf_limit(int speed, int mode)
 
 void break_mots(int t)
 {
-  mr_out(-255);
-  ml_out(-255);
+  mr_out(0);
+  ml_out(0);
   no_state();
   stop_time(t);
   mots_off();
@@ -171,7 +182,9 @@ void mr_out(int pwr)
     digitalWrite(MDR1, LOW);
   }
 
-  analogWrite(PWMR, abs(pwr));
+  #ifndef NO_MOTORS
+    analogWrite(PWMR, abs(pwr));
+  #endif
 }
 
 void ml_out(int pwr)
@@ -188,7 +201,9 @@ void ml_out(int pwr)
     digitalWrite(MDL1, LOW);
   }
 
-  analogWrite(PWML, abs(pwr));
+  #ifndef NO_MOTORS
+    analogWrite(PWML, abs(pwr));
+  #endif
 }
 
 void depr()
@@ -207,49 +222,43 @@ void depl()
 
 void turnr()
 {
+  mr_out(-160);
+  ml_out(160);
+  float high_count = 0;
+
+  for(int i = 0; avg_density >= 3; i++)
+  {
+    read_sv();
+    if(i % 5 == 0){high_count = 0}
+    else{high_count += density;}
+  }
+
   set_last_line(1);
 }
 
 void turnl()
 {
-  set_last_line(-1);
+  mr_out(160);
+  ml_out(-160);
+  float high_count = 0;
+
+  for(int i = 0; avg_density >= 3; i++)
+  {
+    read_sv();
+    if(i % 5 == 0){high_count = 0}
+    else{high_count += density;}
+  }
+  
+  set_last_line(1);
 }
 
 void break_corner()
 {
   stop_corner();
   mots_off();
-  start_count();
+  start_count_u();
   no_state();
   stop_no_corner();
 
-  break_mots(750/get_count());
-}
-
-void calibrate()
-{
-  int tval;
-  while(eval_dip(0xFF, 0x0F))
-  {
-    for(int i = 0; i < NUMLSENSORS; i++)
-    {
-      tval = analogRead(svPins[i]);
-
-      if(tval < low[i]) {low[i] = tval;}
-      else if(tval > high[i]) {high[i] = tval;}
-    }
-
-    #ifdef DEBUG
-      debug_calibration();
-    #endif
-  }
-
-  for(int i = 0; i < NUMLSENSORS; i++)
-  {
-    sv_scale[i] = POSSCALE/(high[i] - low[i]);
-  }
-
-  #ifdef DEBUG
-    while(1){debug_line_sensor(1);}
-  #endif
+  break_mots(750000/get_count_u());
 }

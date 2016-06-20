@@ -2,11 +2,14 @@
   #define asee_h
 
 //MODES
-  //#define INC_PID
-  //s#define DEBUG
+  #define INC_PID
+  //#define DEBUG
+  //#define NO_MOTORS
 
-  #define PINC_PIN 33
-  #define DINC_PIN 32
+  #define D0 29
+  #define D1 30
+  #define D2 31
+  #define D3 33
 
   #define TIME2BOX 500
   #define TIMEBACKBOX 150
@@ -22,6 +25,7 @@
   //MISC
   #define TPM 600
   #define LAST_DIMENSION 1
+  #define LOW_PASS_WIDTH 4
 
   //MOTOR CONTROL
   #define MDR0 7
@@ -119,6 +123,7 @@
   //INIT
     void init_a();
     void blink_led();
+    void blink_async(int);
 
   //ASYNC
     void async_reset();
@@ -143,7 +148,7 @@
 
     void stop_corner();
     void stop_no_corner();
-    void stop_time(int mils);
+    void stop_time(u_long);
 
     void break_mots(int t);
     void mots_off();
@@ -156,7 +161,7 @@
 
     void stop_box(int mode);
 
-    void stop_pb();
+    void stop_dip(int, int);
 
     void go();
 
@@ -165,9 +170,14 @@
     void stop_eval_dip(char compare, char mask);
 
   //TIME
-    long get_dt();
-    void start_count();
-    long get_count();
+    u_long get_dt_u();
+    void start_count_u();
+    u_long get_count_u();
+
+    u_long get_dt_m();
+    void start_count_m();
+    u_long get_count_m();
+
     long get_abs_time();
 
 
