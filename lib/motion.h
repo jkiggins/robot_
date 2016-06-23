@@ -2,7 +2,6 @@ int gs = 0; //global speed to be shared by all async methods
 //int gd = 0; //global distance away from the wall to use when wall following
 int gm = 0; //global mode variable to be used by any method
 int gadj = 0;
-int async_state = -1;
 float adj; //global pid adjust variable
 
 Servo deps; //deposite servo variable
@@ -14,7 +13,7 @@ Servo deps; //deposite servo variable
   edge d_adj(D3);
   int pv, dv;
   float D_P = .05;
-  float D_D = 50;
+  float D_D = 2;
   int count;
   int last_err = 32000;
   int err_track;
@@ -27,14 +26,16 @@ void PID::set_pid(float p, float i, float d)
   pidd[0] = 0; pidd[1] = 0; pidd[2] = 0;
 }
 
-float PID::slice(float err, int dtl)
+float PID::slice(float err, float dtl)
 {
-  if(dtl != 0)
-  {
-    pidd[1] = pidd[0];
-    pidd[0] = err;
-    pidd[2] += ((pidd[0] + pidd[1])/2)*dtl;
+  pidd[1] = pidd[0];
+  pidd[0] = err;
+  pidd[2] += ((pidd[0] + pidd[1])/2)*dtl;
 
+  Serial.println(dtl);
+
+  if(dtl >= .001)
+  {
     pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + (pidd[0] - pidd[1])/dtl * w[2];
   }
 
@@ -145,11 +146,10 @@ void wf_limit(int speed, int mode)
 
 void break_mots(int t)
 {
-  mr_out(0);
-  ml_out(0);
   no_state();
   stop_time(t);
-  mots_off();
+  mr_out(0);
+  ml_out(0);
 }
 
 void mots_off()
@@ -208,6 +208,8 @@ void ml_out(int pwr)
 
 void depr()
 {
+  deps.write(SERVOHOME - 20);
+  delay(100);
   deps.write(SERVOHOME - 45);
   delay(250);
   deps.write(SERVOHOME);
@@ -215,6 +217,8 @@ void depr()
 
 void depl()
 {
+  deps.write(SERVOHOME + 20);
+  delay(100);
   deps.write(SERVOHOME + 45);
   delay(250);
   deps.write(SERVOHOME);
@@ -222,43 +226,39 @@ void depl()
 
 void turnr()
 {
-  mr_out(-160);
-  ml_out(160);
-  float high_count = 0;
+  mr_out(-TURN_SPEED);
+  ml_out(TURN_SPEED);
 
-  for(int i = 0; avg_density >= 3; i++)
-  {
-    read_sv();
-    if(i % 5 == 0){high_count = 0}
-    else{high_count += density;}
-  }
+  while(!eval_line(0x01, 0x01)){}
+  //while(!eval_line(0x02, 0x02)){}
+  while(density == 0);
+  mots_off();
+  delay(200);
 
   set_last_line(1);
 }
 
 void turnl()
 {
-  mr_out(160);
-  ml_out(-160);
-  float high_count = 0;
+  mr_out(TURN_SPEED);
+  ml_out(-TURN_SPEED);
 
-  for(int i = 0; avg_density >= 3; i++)
-  {
-    read_sv();
-    if(i % 5 == 0){high_count = 0}
-    else{high_count += density;}
-  }
+
+  while(!eval_line(0x80, 0x80)){}
+  //while(!eval_line(0x4, 0x4)){}
+  while(density == 0);
+  mots_off();
+  delay(200);
   
-  set_last_line(1);
+  set_last_line(-1);
 }
 
 void break_corner()
 {
   stop_corner();
-  mots_off();
-  start_count_u();
   no_state();
+  start_count_m();
   stop_no_corner();
 
-  break_mots(750000/get_count_u());
+  break_mots(1/get_count_m());
 }

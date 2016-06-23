@@ -9,6 +9,7 @@
 		void wait_pin_settle(int pin, u_long mils)
 		{
 			value = digitalRead(pin);
+	
 			count = millis();
 			int hold;
 			while((millis() - count) < mils)
@@ -35,6 +36,7 @@
 		void eval()
 		{
 			wait_pin_settle(pin, 10);
+			
 			rising = (state == 0 && value == 1);
 			falling = (state == 1 && value == 0);
 			toggle = (rising || falling);

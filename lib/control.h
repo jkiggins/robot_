@@ -1,5 +1,5 @@
 #include "digital_edge.h"
-//LF
+//lf
   void stop_sensor(int sn, int mode) // 0 - stop when high, 1 - stop when low
   {    
     int logic = 1;
@@ -38,13 +38,30 @@
 
   void stop_dd(float dist)
   {
-    dd = 0;
-    dd_flag = 1;
     async_reset();
+    start_encoders();
 
     int dir = sign_f(dist);
 
-    while(dd*dir < abs(dist)){async();}
+    while(track_distance()*dir < abs(dist)){async();}
+
+    end_encoders();
+  }
+
+  void stop_deg(float deg)
+  {
+    float rad = ((deg/180.0)*3.14159265359)/2;
+    async_reset();
+    start_encoders();
+
+    int dir = sign_f(rad);
+
+    while(dir * track_angle() < abs(rad))
+    {
+      async();
+    }
+
+    end_encoders();
   }
 
 //DISTANCE

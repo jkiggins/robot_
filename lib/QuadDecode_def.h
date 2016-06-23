@@ -86,7 +86,7 @@ void QuadDecode<N>::setup(){
 
     FTM_QDCTRL=0b11000001;	    // Quadrature control
     //        Filter enabled, QUADEN set
-	    
+
     // Write Protect Enable
     FTM_FMS=0x40;		// Write Protect, WPDIS=1
 };
@@ -333,6 +333,15 @@ int32_t QuadDecode<N>::calcPosn(void){
     } else {	// Just crossed over TOF
 	return v_basePosn;  // Position is new basePosition, no addtl counts
     }
+}
+
+template <int N>
+void QuadDecode<N>::disable(void){
+    if (N<2){	//FTM1
+	NVIC_DISABLE_IRQ(IRQ_FTM1);
+    } else {
+	NVIC_DISABLE_IRQ(IRQ_FTM2);
+    };
 }
 
 #endif

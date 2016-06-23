@@ -1,0 +1,164 @@
+#include "lib/asee_lib.h"
+
+void setup()
+{
+  init_a();
+  calibrate();
+
+  dr(150);
+  stop_corner();
+
+  dr(100);
+  stop_time(150);
+  
+  lf(BASE_SPEED);
+  corner_r(); // BOTTOM LEFT OUT
+  settle_for_time();
+
+  lf(SPRINT);
+  avoid_corner();
+  
+  corner_r(); // TOP LEFT OUT
+  settle_for_time();
+
+  lf(BASE_SPEED);
+  
+  stop_corner(); // TOP MIDDLE LEFT 
+  dr(200);
+  stop_time(125);
+  mots_off();
+  depl();
+  dr(-100);
+  stop_time(100);
+  turnr();
+  
+
+  settle_for_time();
+  lf(BASE_SPEED);
+
+///////////////////// MIDDLE TURN
+  off_line_box();
+  settle_for_time();
+///////////////////// MIDDLE TURN
+  
+  lf(BASE_SPEED);
+  corner_l(); // TOP LEFT IN
+  lf(BASE_SPEED);
+  avoid_corner();
+
+  /*JAMES INSIDE BOX
+  lf(BASE_SPEED);
+  stop_corner();
+
+  dr(-100);
+  stop_time(100);
+  turnl();
+
+  settle_for_time();
+
+  lf(BASE_SPEED);
+  stop_dd(26);
+  mots_off();
+  delay(500);
+  
+
+  rotate(100, 0);
+  stop_deg(98);
+  mots_off();
+  delay(500);
+  
+
+  dr(225);
+  stop_time(800);
+  depl();
+
+  dr(-150);
+  stop_corner();
+  dr(100);
+  stop_time(200);
+  turnl();
+  
+
+  settle_for_time(); 
+  
+  lf(BASE_SPEED);
+  stop_corner();
+  dr(-100);
+  stop_time(100);
+
+  turnl();
+  settle_for_time();
+  lf(BASE_SPEED);
+  */
+
+  corner_l(); // BOTTOM LEFT IN
+  settle_for_time();
+  
+  lf(BASE_SPEED);
+  stop_time(500);
+  arc(6, 100);
+  stop_time(650);
+  dr(150);
+  stop_time(1000);
+  
+  
+  mots_off(); 
+  
+}
+
+void loop(){}
+
+void corner_r()
+{
+  stop_corner();  
+  dr(200);
+  stop_time(75);
+  mots_off();
+  depl();
+  dr(-100);
+  stop_time(100);
+  turnr();
+}
+
+void corner_l()
+{
+  break_corner();
+  
+  dr(100);
+  stop_time(150);
+  depr();
+  dr(-100);
+  stop_time(150);
+  turnl();
+}
+
+
+void settle_for_time()
+{
+  lf_settle(SBASE_SPEED);
+  stop_time(TIME2SETTLE);
+}
+
+void off_line_box()
+{
+  stop_corner();
+  mots_off();
+  delay(200);
+  dr(-100);
+  stop_time(50);
+  arc(-8, 100);
+  stop_dd(7.6);
+  mots_off();
+  depr();
+  delay(200);
+  arc(-10, -100);
+  stop_dd(-6);
+  turnr();
+}
+
+void avoid_corner()
+{
+  stop_corner();
+  stop_no_corner();
+}
+

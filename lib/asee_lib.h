@@ -2,9 +2,11 @@
   #define asee_h
 
 //MODES
-  #define INC_PID
-  //#define DEBUG
+  //#define INC_PID
+  //#define DEBUG_LINE
+  //#define DEBUG_ENCODERS
   //#define NO_MOTORS
+  #define SMOOTH
 
   #define D0 29
   #define D1 30
@@ -14,13 +16,13 @@
   #define TIME2BOX 500
   #define TIMEBACKBOX 150
   #define DIST2BOX 1.5
-  #define TIME2SETTLE 500
+  #define TIME2SETTLE 600
   #define MID 2000
   #define BASE_SPEED 200
-  #define SBASE_SPEED 120
+  #define SBASE_SPEED 210
   #define SPRINT 255
   #define PRECISION_SPEED 75
-  #define TURN_SPEED 200
+  #define TURN_SPEED 120
 
   //MISC
   #define TPM 600
@@ -42,7 +44,7 @@
   #define SLOW 100
 
   //PHYSICAL
-  #define MPT 0.0208
+  #define MPT 0.0104
   #define WB_L 8.962
 
   //OTHER MISC
@@ -62,6 +64,12 @@
   #define DRIVED 3
   #define NO_STATE -1
 
+  //COLOR
+  #define RED_ENABLE 24
+  #define BLUE_ENABLE 26
+  #define COLOR_IN 27
+  #define LED_DELAY 1 //us
+
   typedef struct
   {
     int r,g,b;
@@ -72,18 +80,20 @@
   //GENERAL PID
   	class PID
   	{
-
   		public:
   			float pidd[4]; //err, last error, running integral, adjust
   			float w[3];
   			void set_pid(float p, float i, float d);
-  			float slice(float err, int dt);
+  			float slice(float err, float);
         void inc_pid();
   	};
 
   //UPDATE
-    void update(int dt);
-    float eval_angle();
+    void start_encoders();
+    void end_encoders();
+    float track_distance();
+    float track_angle();
+
 
   //SPEED CONTROL
     void mr_out(int speed);
@@ -155,7 +165,9 @@
     void slow_mots(int dir_l, int dir_r, int t);
     void break_corner();
 
+    //ENCODERS
     void stop_dd(float dist);
+    void stop_deg(float);
 
     void stop_lost_line();
 
@@ -168,6 +180,12 @@
     int eval_dip(char compare, char mask);
 
     void stop_eval_dip(char compare, char mask);
+
+  //COLOR
+    void stop_red();
+    void stop_blue();
+    void stop_color(float);
+    int eval_color(float, float);
 
   //TIME
     u_long get_dt_u();

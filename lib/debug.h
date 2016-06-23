@@ -1,39 +1,71 @@
-void debug_line_sensor(int mode)
-{
-	int pos = read_line();
-	Serial.print("D: ");Serial.print(density);
-	Serial.print("  POS: ");Serial.print(pos);
-	
-	if(mode == 0)
+#ifndef DEBUG
+	#define DEBUG
+#include "sensors.h"
+#include "digital_edge.h"
+#include "asee_lib.h"
+
+	void debug_line_sensor(int mode)
 	{
-		Serial.print("  Analog Values: ");
-		print_arri(svals, NUMLSENSORS);
+		int pos = read_line();
+		Serial.print("D: ");Serial.print(density);
+		Serial.print("  POS: ");Serial.print(pos);
+		
+		if(mode == 0)
+		{
+			Serial.print("  Analog Values: ");
+			print_arri(svals, NUMLSENSORS);
+		}
+		else
+		{
+			Serial.print("    Digital Values: ");
+			print_char_bitwise(sv_char);
+		}
+
+		Serial.println();
 	}
-	else
+
+	void debug_dips()
 	{
-		Serial.print("    Digital Values: ");
-		print_char_bitwise(sv_char);
+		Serial.print(digitalRead(29));
+		Serial.print(digitalRead(30));
+		Serial.print(digitalRead(31));
+		Serial.print(digitalRead(33));
+		Serial.println();
 	}
 
-	Serial.println();
-}
+	void debug_calibration()
+	{
+		Serial.print("HIGH: ");
+		print_arri(high, NUMLSENSORS);
 
-void debug_dips()
-{
-	Serial.print(digitalRead(29));
-	Serial.print(digitalRead(30));
-	Serial.print(digitalRead(31));
-	Serial.print(digitalRead(33));
-	Serial.println();
-}
+		Serial.println();
 
-void debug_calibration()
-{
-	Serial.print("HIGH: ");
-	print_arri(high, NUMLSENSORS);
+		Serial.print("LOW: ");
+		print_arri(low, NUMLSENSORS);
+	}
 
-	Serial.println();
+	void debug_encoders()
+	{
+		edge edj(D0);
+		edj.eval();
 
-	Serial.print("LOW: ");
-	print_arri(low, NUMLSENSORS);
-}
+		start_encoders();
+
+		edj.eval();
+
+		while(!edj.toggle)
+		{
+			Serial.println(track_distance());
+			edj.eval();
+		}
+
+		edj.eval();
+
+		while(!edj.toggle)
+		{
+			Serial.println(track_angle());
+			edj.eval();
+		}
+
+	}
+#endif
