@@ -55,7 +55,8 @@
 
 		while(!edj.toggle)
 		{
-			Serial.println(track_distance());
+			Serial.print("LEFT: ");Serial.print(mldecode.calcPosn());
+			Serial.print("   RIGHT: ");Serial.println(mrdecode.calcPosn());
 			edj.eval();
 		}
 
@@ -63,9 +64,23 @@
 
 		while(!edj.toggle)
 		{
-			Serial.println(track_angle());
+			Serial.print("d");Serial.println(track_distance());
 			edj.eval();
 		}
 
+		edj.eval();
+
+		while(!edj.toggle)
+		{
+			Serial.print("a");Serial.println(track_angle());
+			edj.eval();
+		}
+
+		end_encoders();
+	}
+
+	void debug_color()
+	{
+		while(1){Serial.println(get_color());}
 	}
 #endif

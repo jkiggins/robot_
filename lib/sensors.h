@@ -2,8 +2,7 @@
 	#define SENSORS
 
 elapsedMillis em;
-elapsedMicros eu;
-u_long counteru, counterm;
+u_long counterm;
 
 //Motion and position VARS
 float motion[3] = {0,0,0}; //angle, right motor ticks/second, left motor ticks/second
@@ -81,41 +80,40 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 //UPDATE
   //VARS
 
- 		#ifdef DEBUG_ENCODERS
-  		#include "debug.h"
- 		#endif
-
     long rtickL, ltickL, lastTickR, lastTickL;
     float angle;
-    //QuadDecode<2> mldecode;	// Template using FTM2 pins 25, 32
+    QuadDecode<2> mldecode;	// Template using FTM2 pins 25, 32
   	QuadDecode<1> mrdecode;	// Template using FTM1 pins 3,4
+
+    #ifdef DEBUG_ENCODERS
+      #include "debug.h"
+    #endif
 
   void start_encoders()
   {
-  	//mldecode.start();
+  	mldecode.start();
   	mrdecode.start();
-  	//lastTickL = 0;
+  	lastTickL = 0;
   	lastTickR = 0;
   	angle = 0;
   }
 
   float track_distance()
   {
-  	return ((/*-mldecode.calcPosn() +*/ mrdecode.calcPosn())/*/2*/)*MPT;
+  	return (mrdecode.calcPosn() - mldecode.calcPosn())/2*MPT;
   }
 
   float track_angle()
   {
-  	long rt;//, lt;
+  	long lt, rt;
 
   	rt = mrdecode.calcPosn();
-  	//lt = -mldecode.calcPosn();
+  	lt = -mldecode.calcPosn();
 
   	rtickL = rt - lastTickR;
-  	//ltickL = lt - lastTickL;
-  	ltickL = -rtickL;
+  	ltickL = lt - lastTickL;
 
-  	//lastTickL = lt;
+  	lastTickL = lt;
   	lastTickR = rt;
 
     float r = (-WB_L/2)*((rtickL + ltickL)/(rtickL - ltickL));
@@ -139,7 +137,7 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
   void end_encoders()
   {
-  	//mldecode.disable();
+  	mldecode.disable();
   	mrdecode.disable();
   }
 
@@ -157,48 +155,50 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   	return (sw & mask) == (compare & mask);
   }
 
-  //COLOR
-  	int eval_color(float low, float high) //returns a 1 if color is in range , 0 if not
-  	{
-  		int ambient, blue, red;
-  		float color;
+//COLOR
+    int RED_ENABLE;
+    int BLUE_ENABLE;
+    int COLOR_IN;
 
-  		digitalWrite(RED_ENABLE, LOW);digitalWrite(BLUE_ENABLE, LOW);
-  		delayMicroseconds(LED_DELAY);
-  		ambient = analogRead(COLOR_IN);
+    void set_color_pins(int red, int blue, int color)
+    {
+      RED_ENABLE = red;
+      BLUE_ENABLE = blue;
+      COLOR_IN = color;
 
-  		digitalWrite(RED_ENABLE, HIGH);
-  		delayMicroseconds(LED_DELAY);
-  		red = analogRead(COLOR_IN) - ambient;
+      pinMode(red, OUTPUT);pinMode(blue, OUTPUT);
+    }
 
-  		digitalWrite(RED_ENABLE, LOW);digitalWrite(BLUE_ENABLE, HIGH);
-  		delayMicroseconds(LED_DELAY);
-  		blue = analogRead(COLOR_IN) - ambient;
+    float get_color()
+    {
+      int ambient, blue, red;
 
-  		color = ((float)red/(float)blue);
+      digitalWrite(RED_ENABLE, LOW);digitalWrite(BLUE_ENABLE, LOW);
+      //delay(LED_DELAY);
+      //ambient = analogRead(COLOR_IN);
+      ambient = 0.0;
 
-  		return (color >= low && color <= high);
-  	}
+      digitalWrite(RED_ENABLE, HIGH);
+      delay(LED_DELAY);
+      red = analogRead(COLOR_IN) - ambient;
+
+      digitalWrite(RED_ENABLE, LOW);digitalWrite(BLUE_ENABLE, HIGH);
+      delay(LED_DELAY);
+      blue = analogRead(COLOR_IN) - ambient;
+
+      digitalWrite(RED_ENABLE, LOW);digitalWrite(BLUE_ENABLE, LOW);
+
+      return ((float)red+(float)blue);
+    }
 
 
 	//TIME
-		u_long get_dt_u()
-		{
-      long tmp = eu;
-      eu = 0;
-      return tmp;
-		}
 
     u_long get_dt_m()
     {
       long tmp = em;
       em = 0;
       return tmp;
-    }
-
-    void start_count_u()
-		{
-      counteru = micros();
     }
 
 		void start_count_m()
@@ -210,11 +210,6 @@ int high[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 		{
 			return (millis() - counterm);
 		}
-
-    u_long get_count_u()
-    {
-      return (micros() - counteru);
-    }
 
 		u_long get_abs_time_m()
 		{
@@ -250,15 +245,16 @@ void calibrate()
   }
 
   #ifdef DEBUG_LINE
-    while(!eval_dip(0xFF, 0x0F)){debug_line_sensor(0);}
+    while(!eval_dip(0xFF, 0x0F)){debug_line_sensor(1);}
+
     async_state = LINEF;
     async_reset();
     int pos;
+
     while(eval_dip(0xFF, 0x0F))
     {
     	pos = read_line();
-    	Serial.println(pidlf.slice(CENTEROFLINE - pos, get_dt_m()));
-    	//Serial.println(get_dt_m());
+    	Serial.println(pidlf.slice(CENTEROFLINE - pos, .4));
     }
   #endif
 }

@@ -87,6 +87,19 @@
     }
   }
 
+//COLOR
+void stop_red()
+{
+  async_reset();
+
+  while(get_color() < 1.5)
+  {
+    async();
+  }
+
+}
+
+
 //EXTENDED
   void stop_corner()
   {

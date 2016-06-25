@@ -2,30 +2,40 @@
 
 void setup()
 {
+
   init_a();
-  calibrate();
-
-  digitalWrite(RED_ENABLE, HIGH);
-  //digitalWrite(BLUE_ENABLE, HIGH);
-
+  mr_out(100);
+  ml_out(100);
   while(1){}
-
+  calibrate();
+  
+  stop_dip(1, D0);
+/*
   dr(200);
-  stop_corner();
+  avoid_corner();
+
+  arc(-5, 100);
+  stop_time(1);
+
   dr(100);
-  stop_time(200);
+  stop_sensor(3, 0);
 
-lf(BASE_SPEED);
-corner_l(); // BOTTOM RIGHT OUT
+*/
 
-settle_for_time();
-lf(SPRINT);
-avoid_corner();
+  lf(BASE_SPEED);
+  go();
+  corner_l(); // BOTTOM RIGHT OUT
+  
+  settle_for_time();
 
-corner_l(); // TOP RIGHT OUT
-settle_for_time();
-
-lf(BASE_SPEED);
+  lf(SPRINT);
+  avoid_corner();
+  
+  corner_l(); // TOP RIGHT OUT
+  settle_for_time();
+    /*
+  
+  lf(BASE_SPEED);
 
   stop_corner(); // TOP MIDDLE RIGHT
   dr(100);
@@ -46,9 +56,9 @@ lf(BASE_SPEED);
   turnl();
 ///////////////////// MIDDLE TURN
 
-    lf_settle(120);
+    lf_settle(150);
   stop_time(TIME2SETTLE);
-  lf(120);
+  lf(175);
 
   corner_r(); // TOP RIGHT IN
 
@@ -74,6 +84,8 @@ lf(BASE_SPEED);
 
   arc(50,100);
   stop_dd(19);
+  mots_off();
+  delay(500);
   
   depr();
   mots_off();
@@ -82,10 +94,14 @@ lf(BASE_SPEED);
   arc(0, -150);
   stop_time(400);
 
+  dr(-150);
+  stop_time(500);
+
   dr(200);
   stop_dd(16);
+  */
 
- mots_off(); 
+ mots_off();
   
 }
 
@@ -95,32 +111,36 @@ void corner_r()
 {
   stop_corner();  
   dr(100);
-  stop_time(300);
+  stop_time(TIME2BOX);
   mots_off();
+  
   depl();
+  
   dr(-100);
   stop_time(100);
+  
   turnr();
 }
 
 void corner_l()
 {
-  break_corner();
-  
+  stop_corner();  
   dr(100);
-  stop_time(250);
+  stop_time(TIME2BOX);
   mots_off();
+  
   depr();
-  delay(300);
+  
   dr(-100);
   stop_time(150);
+  
   turnl();
 }
 
 
 void settle_for_time()
 {
-  lf_settle(SBASE_SPEED);
+  lf(SBASE_SPEED);
   stop_time(TIME2SETTLE);
 }
 

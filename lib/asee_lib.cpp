@@ -16,6 +16,8 @@ int async_state = -1;
 #include "motion.h"
 #include "control.h"
 
+#include "debug.h"
+
 //INIT
   void init_a()
   {
@@ -23,10 +25,7 @@ int async_state = -1;
     pinMode(13, OUTPUT);
     pinMode(WF_PIN, INPUT);
     pinMode(BOX_LIMIT_PIN, INPUT);
-    pinMode(RED_ENABLE, OUTPUT);pinMode(BLUE_ENABLE, OUTPUT); //COLOR SENSOR
     pinMode(D0, INPUT_PULLUP);pinMode(D1, INPUT_PULLUP);pinMode(D2, INPUT_PULLUP);pinMode(D3, INPUT_PULLUP); //DIP SWITCHES
-
-    digitalWrite(RED_ENABLE, LOW);digitalWrite(BLUE_ENABLE, LOW);
 
     deps.attach(SERVOPIN);
     deps.write(SERVOHOME);
@@ -36,11 +35,16 @@ int async_state = -1;
     Serial.begin(9600);
 
     mrdecode.setup();
-    //mldecode.setup();
+    mldecode.setup();
     end_encoders();
+
+    //set_color_pins(24, 26, A16);
 
     last_line = 1;
 
+    #ifdef DEBUG_COLOR
+      //debug_color();
+    #endif
     #ifdef DEBUG_ENCODERS
       debug_encoders();
     #endif
@@ -48,37 +52,26 @@ int async_state = -1;
 
   void lf_async(float dt)
   {
-    
-    if(density != 0){
-      pos = read_line();
+    pos = read_line();
+
+    if(density != 0){      
       adj = pidlf.slice(CENTEROFLINE - pos, dt);
       mr_out(gs + adj);
       ml_out(gs - adj);
+      digitalWrite(13, HIGH);
 
     }else{
-       
-      #if defined(DEBUG) || defined(INC_PID)
-        pos = read_line();
-        mr_out(0);
-        ml_out(0);
-        pidlf.inc_pid();
-      #elif defined(SMOOTH)
-        adj = pidlf.slice(CENTEROFLINE - pos, dt);
-        mr_out(gs + adj);
-        ml_out(gs - adj);
-      #else
-        mr_out(-last_line*160);
-        ml_out(last_line*160);
-      #endif
-       read_sv();
+      digitalWrite(13, LOW);
+
+      mr_out(-last_line*160);
+      ml_out(last_line*160);
     }
   }
 
   void drived_async(float dt)
   {
-    adj = pida.slice(track_angle(), dt);
-    mr_out(gs - adj);
-    ml_out(gs + adj);
+    mr_out(gs);
+    ml_out(gs);
   }
 
   void wallf_limit_async()
@@ -92,44 +85,34 @@ int async_state = -1;
   }
 
 //ASYNC
-  float dt;
 
   void async_reset()
   {
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.27, 0, 12.5);
+        pidlf.set_pid(.49, 0, 10);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
-        #ifdef INC_PID
-          pidlf.set_pid(.35, 0, 25);
-        #endif
         break;
       case LFSET:
-        pidlf.set_pid(.27, 0, 12.5);
+       pidlf.set_pid(.47, 0, 11.2);
         async_state = LINEF;
         break;
       case DRIVED:
-        pida.set_pid(1, 0, 0);
-        start_encoders();
-        adj = 0;
         break;
     }
-    get_dt_u();
   }
 
   void async()
   {
-    dt = .4; //((float)get_dt_u())/1000.0;
-
     switch(async_state)
     {
       case LINEF:
-        lf_async(dt);
+        lf_async(0.4);
         break;
 ////////////////////////////////////////////////////////////////////
       case DRIVED:
-        drived_async(dt);
+        drived_async(0.4);
         break;
 ////////////////////////////////////////////////////////////////////
       case WALLF_LIMIT:

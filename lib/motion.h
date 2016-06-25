@@ -31,13 +31,7 @@ float PID::slice(float err, float dtl)
   pidd[1] = pidd[0];
   pidd[0] = err;
   pidd[2] += ((pidd[0] + pidd[1])/2)*dtl;
-
-  Serial.println(dtl);
-
-  if(dtl >= .001)
-  {
-    pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + (pidd[0] - pidd[1])/dtl * w[2];
-  }
+  pidd[3] = pidd[0]*w[0] + pidd[2]*w[1] + (pidd[0] - pidd[1])/dtl * w[2];
 
   return pidd[3];
 }
@@ -228,12 +222,16 @@ void turnr()
 {
   mr_out(-TURN_SPEED);
   ml_out(TURN_SPEED);
+  read_sv();
 
-  while(!eval_line(0x01, 0x01)){}
-  //while(!eval_line(0x02, 0x02)){}
-  while(density == 0);
+  while(svals[NUMLSENSORS -1] < 50){read_sv();}
+  while(density == 0){read_sv();}
+
+  mr_out(TURN_SPEED);
+  ml_out(-TURN_SPEED);
+  delay(75);
   mots_off();
-  delay(200);
+  delay(100); 
 
   set_last_line(1);
 }
@@ -242,23 +240,21 @@ void turnl()
 {
   mr_out(TURN_SPEED);
   ml_out(-TURN_SPEED);
+  read_sv();
+ 
+  while(svals[0] < 50){read_sv();}
+  while(density == 0){read_sv();}
 
-
-  while(!eval_line(0x80, 0x80)){}
-  //while(!eval_line(0x4, 0x4)){}
-  while(density == 0);
+  mr_out(-TURN_SPEED);
+  ml_out(TURN_SPEED);
+  delay(75);
   mots_off();
-  delay(200);
+  delay(100);
   
   set_last_line(-1);
 }
 
 void break_corner()
 {
-  stop_corner();
-  no_state();
-  start_count_m();
-  stop_no_corner();
 
-  break_mots(1/get_count_m());
 }

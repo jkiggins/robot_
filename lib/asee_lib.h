@@ -6,23 +6,24 @@
   //#define DEBUG_LINE
   //#define DEBUG_ENCODERS
   //#define NO_MOTORS
-  #define SMOOTH
+  //#define SMOOTH
+  //#define DEBUG_COLOR
 
   #define D0 29
   #define D1 30
   #define D2 31
   #define D3 33
 
-  #define TIME2BOX 500
+  #define TIME2BOX 250 
   #define TIMEBACKBOX 150
   #define DIST2BOX 1.5
   #define TIME2SETTLE 600
   #define MID 2000
-  #define BASE_SPEED 200
+  #define BASE_SPEED 230
   #define SBASE_SPEED 210
   #define SPRINT 255
   #define PRECISION_SPEED 75
-  #define TURN_SPEED 120
+  #define TURN_SPEED 255
 
   //MISC
   #define TPM 600
@@ -65,10 +66,11 @@
   #define NO_STATE -1
 
   //COLOR
-  #define RED_ENABLE 24
-  #define BLUE_ENABLE 26
-  #define COLOR_IN 27
-  #define LED_DELAY 1 //us
+  #define LED_DELAY 30 //ms
+  
+  void set_color_pins(int, int, int);
+  float get_color();
+  void stop_red();
 
   typedef struct
   {
@@ -141,11 +143,6 @@
 
     void no_state();
 
-  //COLOR SENSOR
-    void setup_color();
-    void clock_color();
-    RGB read_color();
-
   //CONTROL
     void depr();
     void depl();
@@ -188,10 +185,6 @@
     int eval_color(float, float);
 
   //TIME
-    u_long get_dt_u();
-    void start_count_u();
-    u_long get_count_u();
-
     u_long get_dt_m();
     void start_count_m();
     u_long get_count_m();
