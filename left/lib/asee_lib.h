@@ -172,7 +172,7 @@
 
     void stop_box(int mode);
 
-    void stop_start();
+    void stop_start_pull();
     void stop_state_rising();
 
     int is_state_rising();

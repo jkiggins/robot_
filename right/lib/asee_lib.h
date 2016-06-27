@@ -162,6 +162,8 @@
     void slow_mots(int dir_l, int dir_r, int t);
     void break_corner();
 
+    void stop_start_pull();
+
     void stop_prox();
 
     //ENCODERS
@@ -172,7 +174,6 @@
 
     void stop_box(int mode);
 
-    void stop_start();
     void stop_state_rising();
 
     int is_state_rising();
