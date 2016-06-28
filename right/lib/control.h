@@ -106,7 +106,8 @@
     async_reset();
     while( density <= 2 || (svals[0] < 50 && svals[NUMLSENSORS - 1] < 50) )
     {
-      read_sv();
+      if(async_state != LINEF)
+        read_sv();
       async();
     }
   }

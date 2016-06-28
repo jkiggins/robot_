@@ -17,7 +17,7 @@
   #define DIST2BOX 1.5
   #define TIME2SETTLE 10
   #define MID 2000
-  #define BASE_SPEED 230
+  #define BASE_SPEED 255
   #define SBASE_SPEED 210
   #define SPRINT 255
   #define PRECISION_SPEED 75

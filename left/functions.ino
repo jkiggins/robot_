@@ -48,7 +48,7 @@ void off_line_box()
   dr(-100);
   stop_corner();
   arc(-13.3, 100);
-  stop_dd(4.8);
+  stop_dd(4.0);
   mots_off();
   depr();
   delay(200);

@@ -86,7 +86,7 @@ int async_state = -1;
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.9, 0, 67);
+        pidlf.set_pid(.55, 0, 50);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
       case LFSET:

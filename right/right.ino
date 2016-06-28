@@ -1,4 +1,5 @@
-#ifdef RIGHT_PROGRAM
+#include "lib/asee_lib.h"
+
 void setup()
 {
 
@@ -42,43 +43,77 @@ void setup()
   settle_for_time();
 
   lf(SPRINT);/**/avoid_corner();
+
+  corner_r();
   
   //BOTTOM RIGHT MID AREA
-  stop_corner();  
-  dr(200);
-  stop_time(75);
-  mots_off();
-  depl();
-  dr(-100);
-  stop_corner();
-  dr(100);
-  stop_dd(1);
-  mots_off();
-  rotate(-100, 0);
-  stop_sensor(5, 1);
-  mots_off();
+//  stop_corner();  
+//  dr(200);
+//  stop_time(75);
+//  mots_off();
+//  depl();
+//  dr(-100);
+//  stop_corner();
+//  dr(100);
+//  stop_dd(1);
+//  mots_off();
+//  rotate(-100, 0);
+//  stop_sensor(5, 1);
+//  mots_off();
 
-  //OFF LINE BOX
-  dr(-100);
-  stop_time(1000);
+//  //OFF LINE BOX
+//  dr(-100);
+//  stop_time(1000);
+//
+//  arc(40,100);
+//  stop_dd(19);
+//  stop_prox();
+//  dr(-100);
+//  stop_dd(-.3);
+//  mots_off();
+//  
+//  depr();//BOTTOM MIDDLE BOX
+//  /////
+//
+//  //GET BACK
+//  arc(-15, 100);
+//  stop_sensor(2, 1);
 
-  arc(40,100);
-  stop_dd(19);
-  stop_prox();
-  dr(-100);
-  stop_dd(-.3);
-  mots_off();
   
-  depr();//BOTTOM MIDDLE BOX
-  /////
+  lf(BASE_SPEED);
+  corner_r();
+  lf(SPRINT);
+  avoid_corner();
+  corner_r();
 
-  //GET BACK
-  arc(-10, 150);
-  stop_time(700);
+
+
+
+  
+  lf(BASE_SPEED);
+  stop_corner();
+  dr(-100);
+  stop_time(100);
+
+  rotate(100, 0);
+  stop_time(500);
+  turnl();
+  lf(BASE_SPEED);
+  corner_l();
+  lf(BASE_SPEED);
+  corner_l();
+  lf(SPRINT);
+  avoid_corner();
+  corner_l();
+  lf(SPRINT);
+  avoid_corner();
+
+  dr(100);
+  stop_time(600);
 
 
   mots_off();
 }
 
 void loop(){}
-#endif
+

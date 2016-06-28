@@ -58,8 +58,8 @@ int async_state = -1;
     }else{
       digitalWrite(13, LOW);
 
-      mr_out(-last_line*100);
-      ml_out(last_line*100);
+      mr_out(-last_line*250);
+      ml_out(last_line*250);
     }
   }
 
@@ -86,7 +86,7 @@ int async_state = -1;
     switch(async_state)
     {
       case LINEF:
-        pidlf.set_pid(.9, 0, 67);
+        pidlf.set_pid(.55, 0, 45);
         w = 0; wsum = 0; adj = 0; pos = CENTEROFLINE;
         break;
       case LFSET:

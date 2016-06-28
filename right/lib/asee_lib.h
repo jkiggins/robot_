@@ -18,8 +18,8 @@
   #define TIME2SETTLE 10
   #define MID 2000
   #define BASE_SPEED 230
-  #define SBASE_SPEED 210
-  #define SPRINT 255
+  #define SBASE_SPEED 150
+  #define SPRINT 200
   #define PRECISION_SPEED 75
   #define TURN_SPEED 255
 
